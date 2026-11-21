@@ -118,21 +118,16 @@ export async function listProjects(): Promise<Result<ProjectList>> {
 // ---- context: what Lifeline says you're working on --------------------------------
 
 interface RawSession {
-  subject_id: string
-  subject_kind: string
+  /** The project (a leaf "task" in Lifeline's terms) the session is filed on. */
+  task_id: string | null
   running: boolean
-  project_ids?: string[]
 }
 
 export function currentProjectId(): Promise<Result<string | null>> {
   return attempt(async () => {
     const running = await call<RawSession[]>('list_time_tracked', { running_only: true, limit: 10 })
-    // Most recent first. A clock on a goal has no project, so skip to one that does.
-    for (const s of running) {
-      const projectId = s.project_ids?.[0] ?? (s.subject_kind === 'project' ? s.subject_id : null)
-      if (projectId) return projectId
-    }
-    return null
+    // Most recent first; skip any session that isn't filed on a project.
+    return running.find((s) => s.task_id)?.task_id ?? null
   })
 }
 
