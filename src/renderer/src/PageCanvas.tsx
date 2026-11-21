@@ -6,8 +6,14 @@ const SAVE_DELAY_MS = 400
 
 type Loaded = { snapshot: TLStoreSnapshot | undefined }
 
+interface Props {
+  pageId: string
+  /** Called once the page's editor is ready, so siblings (the transcript panel) can use it. */
+  onEditor(editor: Editor): void
+}
+
 /** One page's canvas: loads its ink, autosaves every change, flushes on switch or close. */
-export function PageCanvas({ pageId }: { pageId: string }) {
+export function PageCanvas({ pageId, onEditor }: Props) {
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [editor, setEditor] = useState<Editor | null>(null)
 
@@ -23,6 +29,7 @@ export function PageCanvas({ pageId }: { pageId: string }) {
 
   useEffect(() => {
     if (!editor) return
+    onEditor(editor)
     let timer: ReturnType<typeof setTimeout> | null = null
     let dirty = false
 
@@ -49,7 +56,7 @@ export function PageCanvas({ pageId }: { pageId: string }) {
       stopFlushHandler()
       save()
     }
-  }, [editor, pageId])
+  }, [editor, pageId, onEditor])
 
   if (!loaded) return null
   return <Tldraw snapshot={loaded.snapshot} onMount={setEditor} />

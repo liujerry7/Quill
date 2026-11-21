@@ -1,6 +1,15 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'node:path'
+import icon from '../../resources/icon.png?asset'
 import * as pages from './pageStore'
+import { readInk } from './read'
+
+// Secrets (ANTHROPIC_API_KEY) come from .env and stay in this process.
+try {
+  process.loadEnvFile(path.join(app.getAppPath(), '.env'))
+} catch (err) {
+  if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err
+}
 
 function registerPageHandlers() {
   ipcMain.handle('pages:list', () => pages.listPages())
@@ -9,8 +18,11 @@ function registerPageHandlers() {
   ipcMain.handle('pages:remove', (_e, id: string) => pages.removePage(id))
   ipcMain.handle('pages:load', (_e, id: string) => pages.loadPage(id))
   ipcMain.handle('pages:save', (_e, id: string, content: unknown) => pages.savePage(id, content))
+  ipcMain.handle('pages:loadTranscript', (_e, id: string) => pages.loadTranscript(id))
+  ipcMain.handle('pages:saveTranscript', (_e, id: string, md: string) => pages.saveTranscript(id, md))
   ipcMain.handle('pages:getLastOpened', () => pages.getLastOpened())
   ipcMain.handle('pages:setLastOpened', (_e, id: string) => pages.setLastOpened(id))
+  ipcMain.handle('ink:read', (_e, pngBase64: string) => readInk(pngBase64))
 }
 
 function createWindow() {
@@ -18,6 +30,7 @@ function createWindow() {
     width: 1400,
     height: 900,
     title: 'Quill',
+    icon,
     autoHideMenuBar: true,
     backgroundColor: '#f9fafb',
     webPreferences: {
@@ -53,6 +66,9 @@ function createWindow() {
     win.loadFile(path.join(__dirname, '../renderer/index.html'))
   }
 }
+
+// Groups Quill's windows under its own taskbar icon on Windows.
+app.setAppUserModelId('app.quill')
 
 app.whenReady().then(() => {
   registerPageHandlers()

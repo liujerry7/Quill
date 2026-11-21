@@ -7,7 +7,8 @@ import type { PageContent, PageMeta } from '../shared/pages'
 // Layout under the app's user-data folder:
 //   pages/index.json      { pages: PageMeta[], lastOpened: string | null }
 //   pages/<id>.json       tldraw document snapshot for that page
-//   pages/trash/<id>.json deleted pages, kept so a slip of the pen never loses notes
+//   pages/<id>.md         that page's Markdown transcription
+//   pages/trash/<id>.*    deleted pages, kept so a slip of the pen never loses notes
 
 interface PageIndex {
   pages: PageMeta[]
@@ -17,6 +18,7 @@ interface PageIndex {
 const dir = () => path.join(app.getPath('userData'), 'pages')
 const indexFile = () => path.join(dir(), 'index.json')
 const pageFile = (id: string) => path.join(dir(), `${id}.json`)
+const transcriptFile = (id: string) => path.join(dir(), `${id}.md`)
 
 const ID_PATTERN = /^[0-9a-f-]{36}$/
 function checkId(id: string) {
@@ -95,10 +97,12 @@ export function removePage(id: string): Promise<void> {
     if (index.lastOpened === id) index.lastOpened = null
     const trash = path.join(dir(), 'trash')
     await fs.mkdir(trash, { recursive: true })
-    await fs.rename(pageFile(id), path.join(trash, `${id}.json`)).catch((err) => {
-      // A page that was never drawn on has no ink file; nothing to keep.
-      if (err.code !== 'ENOENT') throw err
-    })
+    for (const file of [pageFile(id), transcriptFile(id)]) {
+      await fs.rename(file, path.join(trash, path.basename(file))).catch((err) => {
+        // A page never drawn on (or never read) has no file of that kind; nothing to keep.
+        if (err.code !== 'ENOENT') throw err
+      })
+    }
   })
 }
 
@@ -117,6 +121,25 @@ export async function savePage(id: string, content: PageContent): Promise<void> 
   await editIndex(async (index) => {
     const page = findPage(index, id)
     await writeAtomic(pageFile(id), JSON.stringify(content))
+    page.updatedAt = new Date().toISOString()
+  })
+}
+
+export async function loadTranscript(id: string): Promise<string> {
+  checkId(id)
+  try {
+    return await fs.readFile(transcriptFile(id), 'utf8')
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return ''
+    throw err
+  }
+}
+
+export async function saveTranscript(id: string, markdown: string): Promise<void> {
+  checkId(id)
+  await editIndex(async (index) => {
+    const page = findPage(index, id)
+    await writeAtomic(transcriptFile(id), markdown)
     page.updatedAt = new Date().toISOString()
   })
 }

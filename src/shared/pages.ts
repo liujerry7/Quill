@@ -1,5 +1,5 @@
-// A Quill page: one tldraw canvas of ink. Its metadata lives in the page index;
-// its ink lives in its own file as a tldraw document snapshot.
+// A Quill page: one tldraw canvas of ink plus Claude's (hand-corrected) transcription.
+// Its metadata lives in the page index; its ink and transcript live in their own files.
 
 export interface PageMeta {
   id: string
@@ -18,6 +18,9 @@ export interface PagesApi {
   remove(id: string): Promise<void>
   load(id: string): Promise<PageContent | null>
   save(id: string, content: PageContent): Promise<void>
+  /** The page's Markdown transcription (empty string if it has none yet). */
+  loadTranscript(id: string): Promise<string>
+  saveTranscript(id: string, markdown: string): Promise<void>
   /** The page that was open when Quill last closed, if it still exists. */
   getLastOpened(): Promise<string | null>
   setLastOpened(id: string): Promise<void>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6d6af8"/>
+      <stop offset="1" stop-color="#3f37c9"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- the line of ink just written -->
+  <path d="M70 420 C 94 390, 112 450, 136 418 S 166 400, 178 416" fill="none" stroke="#fff" stroke-opacity="0.85" stroke-width="18" stroke-linecap="round"/>
+  <!-- the quill, nib at the end of the ink -->
+  <g transform="translate(66 -14) rotate(40 256 256)">
+    <path d="M256 438 C 176 344, 150 196, 256 64 C 326 186, 318 340, 256 438 Z" fill="#fff"/>
+    <path d="M196 236 L 236 262 M186 300 L 232 320 M204 360 L 240 372" stroke="#5550e6" stroke-width="9" stroke-linecap="round"/>
+    <path d="M256 110 L 256 452" stroke="#5550e6" stroke-width="9" stroke-linecap="round"/>
+    <path d="M246 438 L 266 438 L 256 482 Z" fill="#fff"/>
+  </g>
+</svg>

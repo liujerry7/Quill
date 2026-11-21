@@ -20,9 +20,83 @@ body,
   height: 100%;
 }
 
+.page-view {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
 .canvas {
   position: relative;
   flex: 1;
+  min-width: 0;
+}
+
+.transcript {
+  width: 380px;
+  flex-shrink: 0;
+  border-left: 1px solid #e5e7eb;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+}
+
+.transcript header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  font-weight: 600;
+}
+
+.transcript .read {
+  font: inherit;
+  font-weight: 600;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 6px;
+  background: #4f46e5;
+  color: #fff;
+  cursor: pointer;
+}
+
+.transcript .read:disabled {
+  background: #a5b4fc;
+  cursor: default;
+}
+
+.transcript .error {
+  margin: 0 12px 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.transcript textarea {
+  flex: 1;
+  min-height: 120px;
+  margin: 0 12px;
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font: 13px/1.5 ui-monospace, 'Cascadia Code', Consolas, monospace;
+  resize: none;
+}
+
+.transcript textarea:focus {
+  outline: 2px solid #a5b4fc;
+  border-color: transparent;
+}
+
+.transcript .preview {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 16px 16px;
+  line-height: 1.55;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 12px;
 }
 
 .pages {

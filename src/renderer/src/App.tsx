@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { PageMeta } from '../../shared/pages'
-import { PageCanvas } from './PageCanvas'
 import { PageList } from './PageList'
+import { PageView } from './PageView'
 
 const api = window.quill.pages
 
@@ -68,10 +68,8 @@ export function App() {
         onRename={renamePage}
         onRemove={removePage}
       />
-      <main className="canvas">
-        {/* Keyed by page so each page gets a fresh editor and store. */}
-        <PageCanvas key={currentId} pageId={currentId} />
-      </main>
+      {/* Keyed by page so each page gets a fresh editor, store and transcript. */}
+      <PageView key={currentId} pageId={currentId} />
     </div>
   )
 }

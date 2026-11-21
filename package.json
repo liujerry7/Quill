@@ -13,9 +13,17 @@
     "check": "npm run typecheck && npm run build"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.12.0",
+    "katex": "^0.19.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "react-markdown": "^10.1.0",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0",
     "tldraw": "^5.6.2"
+  },
+  "overrides": {
+    "katex": "$katex"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
