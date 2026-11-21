@@ -2,7 +2,7 @@ import { app } from 'electron'
 import { randomUUID } from 'node:crypto'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
-import type { PageContent, PageMeta } from '../shared/pages'
+import type { LifelineLink, PageContent, PageMeta } from '../shared/pages'
 
 // Layout under the app's user-data folder:
 //   pages/index.json      { pages: PageMeta[], lastOpened: string | null }
@@ -34,7 +34,13 @@ async function writeAtomic(file: string, data: string) {
 
 async function readIndex(): Promise<PageIndex> {
   try {
-    return JSON.parse(await fs.readFile(indexFile(), 'utf8')) as PageIndex
+    const index = JSON.parse(await fs.readFile(indexFile(), 'utf8')) as PageIndex
+    // Pages from before folders existed are Unfiled and not yet saved to Lifeline.
+    for (const page of index.pages) {
+      page.projectId ??= null
+      page.lifeline ??= null
+    }
+    return index
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') return { pages: [], lastOpened: null }
     throw err
@@ -65,17 +71,45 @@ export async function listPages(): Promise<PageMeta[]> {
   return (await readIndex()).pages
 }
 
-export function createPage(name?: string): Promise<PageMeta> {
+export async function getPage(id: string): Promise<PageMeta> {
+  checkId(id)
+  return findPage(await readIndex(), id)
+}
+
+export function createPage(projectId: string | null, name?: string): Promise<PageMeta> {
   return editIndex((index) => {
     const now = new Date().toISOString()
+    const inFolder = index.pages.filter((p) => p.projectId === projectId).length
     const page: PageMeta = {
       id: randomUUID(),
-      name: name?.trim() || `Page ${index.pages.length + 1}`,
+      name: name?.trim() || `Page ${inFolder + 1}`,
+      projectId,
+      lifeline: null,
       createdAt: now,
       updatedAt: now,
     }
     index.pages.push(page)
     return page
+  })
+}
+
+export function setPageProject(id: string, projectId: string | null): Promise<PageMeta> {
+  checkId(id)
+  return editIndex((index) => {
+    const page = findPage(index, id)
+    page.projectId = projectId
+    page.updatedAt = new Date().toISOString()
+    return { ...page }
+  })
+}
+
+/** Record which Lifeline doc this page's transcript now lives in. */
+export function setPageLink(id: string, link: LifelineLink): Promise<PageMeta> {
+  checkId(id)
+  return editIndex((index) => {
+    const page = findPage(index, id)
+    page.lifeline = link
+    return { ...page }
   })
 }
 

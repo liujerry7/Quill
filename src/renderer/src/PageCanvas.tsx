@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Editor, getSnapshot, Tldraw, TLStoreSnapshot } from 'tldraw'
+import { Editor, getSnapshot, type TLComponents, Tldraw, TLStoreSnapshot } from 'tldraw'
 
 const api = window.quill.pages
 const SAVE_DELAY_MS = 400
+const HIDDEN_UI: TLComponents = { PageMenu: null }
 
 type Loaded = { snapshot: TLStoreSnapshot | undefined }
 
@@ -59,5 +60,6 @@ export function PageCanvas({ pageId, onEditor }: Props) {
   }, [editor, pageId, onEditor])
 
   if (!loaded) return null
-  return <Tldraw snapshot={loaded.snapshot} onMount={setEditor} />
+  // A Quill page is one tldraw page, so hide tldraw's own page menu to avoid two kinds of "page".
+  return <Tldraw snapshot={loaded.snapshot} onMount={setEditor} components={HIDDEN_UI} />
 }

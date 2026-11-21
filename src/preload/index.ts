@@ -1,11 +1,13 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import type { LifelineApi } from '../shared/lifeline'
 import type { PagesApi } from '../shared/pages'
 import type { ReadApi } from '../shared/read'
 
 const pages: PagesApi = {
   list: () => ipcRenderer.invoke('pages:list'),
-  create: (name) => ipcRenderer.invoke('pages:create', name),
+  create: (projectId, name) => ipcRenderer.invoke('pages:create', projectId, name),
   rename: (id, name) => ipcRenderer.invoke('pages:rename', id, name),
+  setProject: (id, projectId) => ipcRenderer.invoke('pages:setProject', id, projectId),
   remove: (id) => ipcRenderer.invoke('pages:remove', id),
   load: (id) => ipcRenderer.invoke('pages:load', id),
   save: (id, content) => ipcRenderer.invoke('pages:save', id, content),
@@ -32,4 +34,13 @@ const ink: ReadApi = {
   read: (pngBase64) => ipcRenderer.invoke('ink:read', pngBase64),
 }
 
-contextBridge.exposeInMainWorld('quill', { pages, ink, onFlushRequest })
+const lifeline: LifelineApi = {
+  isConfigured: () => ipcRenderer.invoke('lifeline:isConfigured'),
+  listProjects: () => ipcRenderer.invoke('lifeline:listProjects'),
+  currentProjectId: () => ipcRenderer.invoke('lifeline:currentProjectId'),
+  listDocs: (projectId) => ipcRenderer.invoke('lifeline:listDocs', projectId),
+  readDoc: (docId) => ipcRenderer.invoke('lifeline:readDoc', docId),
+  savePage: (pageId, opts) => ipcRenderer.invoke('lifeline:savePage', pageId, opts),
+}
+
+contextBridge.exposeInMainWorld('quill', { pages, ink, lifeline, onFlushRequest })

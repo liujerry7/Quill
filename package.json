@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.12.0",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "katex": "^0.19.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
