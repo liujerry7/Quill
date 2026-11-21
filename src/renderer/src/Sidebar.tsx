@@ -1,9 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { LifelineDocMeta, ProjectList } from '../../shared/lifeline'
+import type { FilterList, LifelineDocMeta, ProjectList } from '../../shared/lifeline'
 import type { PageMeta } from '../../shared/pages'
 import { PageList } from './PageList'
 import { ProjectPicker } from './ProjectPicker'
-import { ancestorsOf, buildTree, type TreeNode } from './projectTree'
+import { buildFilterTree, buildTree, pathTo, type TreeNode } from './projectTree'
+
+/** The sidebar view: Lifeline's project tree ("By goal"), or one of the user's filters by id. */
+const BY_GOAL = 'by-goal'
+const VIEW_KEY = 'quill.sidebarView'
+
+function storedView(): string {
+  try {
+    return localStorage.getItem(VIEW_KEY) ?? BY_GOAL
+  } catch {
+    return BY_GOAL
+  }
+}
 
 export type DocsState =
   | { status: 'idle' }
@@ -15,6 +27,7 @@ interface Props {
   configured: boolean
   projects: ProjectList | null
   projectsError: string | null
+  filters: FilterList | null
   pages: PageMeta[]
   /** The open folder: a Lifeline project id, or null for Unfiled. */
   folderId: string | null
@@ -31,8 +44,20 @@ interface Props {
 
 /** Quill's folders are Lifeline's projects. */
 export function Sidebar(props: Props) {
-  const { configured, projects, projectsError, pages, folderId } = props
+  const { configured, projects, projectsError, filters, pages, folderId } = props
   const list = projects?.projects ?? []
+
+  const [view, setView] = useState(storedView)
+  const chooseView = (id: string) => {
+    setView(id)
+    try {
+      localStorage.setItem(VIEW_KEY, id)
+    } catch {
+      // Remembering the view is a convenience; without storage it just resets next launch.
+    }
+  }
+  // A filter that's gone (or not loaded yet) falls back to the project tree.
+  const filter = view === BY_GOAL ? null : (filters?.filters.find((f) => f.id === view) ?? null)
 
   const pageCount = useMemo(() => {
     const counts = new Map<string | null, number>()
@@ -42,44 +67,68 @@ export function Sidebar(props: Props) {
 
   const tree = useMemo(() => {
     const withPages = new Set(pages.flatMap((p) => (p.projectId ? [p.projectId] : [])))
-    return buildTree(list, withPages, folderId)
-  }, [list, pages, folderId])
+    return filter ? buildFilterTree(list, filter, withPages, folderId) : buildTree(list, withPages, folderId)
+  }, [list, filter, pages, folderId])
 
-  // Branches start collapsed, except the one holding the open folder.
+  // The open folder can sit in more than one place; its contents show at the first one only.
+  const openPath = useMemo(() => (folderId ? pathTo(tree, folderId) : null), [tree, folderId])
+  const firstKey = openPath?.at(-1) ?? null
+
+  // Branches start collapsed, except the ones down to the open folder.
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const openPathKey = openPath?.join('|') ?? ''
   useEffect(() => {
-    if (!folderId) return
-    const path = ancestorsOf(list, folderId)
-    setExpanded((prev) => (([...path].every((id) => prev.has(id))) ? prev : new Set([...prev, ...path])))
-  }, [list, folderId])
-  const toggle = (id: string) =>
+    if (!openPath) return
+    const above = openPath.slice(0, -1)
+    setExpanded((prev) => (above.every((k) => prev.has(k)) ? prev : new Set([...prev, ...above])))
+    // Keyed on the path's text, not the array, so collapsing a branch by hand sticks.
+  }, [openPathKey])
+  const toggle = (key: string) =>
     setExpanded((prev) => {
       const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
       return next
     })
 
   const contents = <FolderContents {...props} />
   const renderNode = (node: TreeNode) => {
+    const open = expanded.has(node.key)
+    const chevron =
+      node.children.length > 0 ? (
+        <button className="chevron" onClick={() => toggle(node.key)} aria-label={open ? 'Collapse' : 'Expand'}>
+          {open ? '▾' : '▸'}
+        </button>
+      ) : (
+        <span className="chevron" />
+      )
     const p = node.project
-    const open = expanded.has(p.id)
-    const selected = p.id === folderId
+    const selected = p?.id === folderId
     return (
       <li key={node.key}>
-        <div className={`folder${selected ? ' selected' : ''}`} style={{ paddingLeft: 6 + node.depth * 14 }}>
-          {node.children.length > 0 ? (
-            <button className="chevron" onClick={() => toggle(p.id)} aria-label={open ? 'Collapse' : 'Expand'}>
-              {open ? '▾' : '▸'}
+        <div
+          className={`folder${selected ? ' selected' : ''}${node.group ? ' group' : ''}`}
+          style={{ paddingLeft: 6 + node.depth * 14 }}
+        >
+          {chevron}
+          {p ? (
+            <button className="folder-name" onClick={() => props.onSelectFolder(p.id)} title={p.name}>
+              {p.color && <span className="swatch" style={{ background: p.color }} />}
+              <span className="label">{p.name}</span>
+              {(pageCount.get(p.id) ?? 0) > 0 && <span className="count">{pageCount.get(p.id)}</span>}
             </button>
           ) : (
-            <span className="chevron" />
+            // A filter folder only arranges projects, so it opens and closes rather than being opened.
+            <button
+              className="folder-name"
+              onClick={() => toggle(node.key)}
+              title={node.group!.name}
+              disabled={node.children.length === 0}
+            >
+              <span className="label">{node.group!.name}</span>
+              {node.children.length === 0 && <span className="count">empty</span>}
+            </button>
           )}
-          <button className="folder-name" onClick={() => props.onSelectFolder(p.id)} title={p.name}>
-            {p.color && <span className="swatch" style={{ background: p.color }} />}
-            <span className="label">{p.name}</span>
-            {(pageCount.get(p.id) ?? 0) > 0 && <span className="count">{pageCount.get(p.id)}</span>}
-          </button>
         </div>
         {selected && node.key === firstKey && <div style={{ paddingLeft: 20 + node.depth * 14 }}>{contents}</div>}
         {open && node.children.length > 0 && <ul>{node.children.map(renderNode)}</ul>}
@@ -87,26 +136,29 @@ export function Sidebar(props: Props) {
     )
   }
 
-  // The open folder may sit twice in the tree (two parents); show its contents only at the first.
-  const firstKey = useMemo(() => {
-    let found: string | null = null
-    const walk = (nodes: TreeNode[]) => {
-      for (const n of nodes) {
-        if (found) return
-        if (n.project.id === folderId) found = n.key
-        else walk(n.children)
-      }
-    }
-    walk(tree)
-    return found
-  }, [tree, folderId])
-
+  const stale = (projects?.stale || filters?.stale) ?? false
   return (
     <aside className="sidebar">
       <header>
-        <span>Folders</span>
-        {configured && projects?.stale && (
-          <span className="chip" title={projects.error}>offline</span>
+        {configured && (filters?.filters.length ?? 0) > 0 ? (
+          <select
+            className="view-select"
+            value={filter ? filter.id : BY_GOAL}
+            onChange={(e) => chooseView(e.target.value)}
+            aria-label="Arrange folders"
+          >
+            <option value={BY_GOAL}>By goal</option>
+            {filters!.filters.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span>Folders</span>
+        )}
+        {configured && stale && (
+          <span className="chip" title={projects?.error ?? filters?.error}>offline</span>
         )}
       </header>
 

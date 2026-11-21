@@ -27,9 +27,12 @@ Quill is an MCP client of Lifeline's own `/mcp` endpoint (no Lifeline changes). 
 `LIFELINE_URL` and `LIFELINE_TOKEN` in `.env` (Settings ▸ AI access in Lifeline gives both;
 the token needs read-and-write). Then:
 
-- **Folders are Lifeline projects.** The sidebar shows in-progress and up-next projects (and
-  any project holding Quill pages) as a tree, with search for the rest. Pages from before
-  this are in **Unfiled**. The project list is cached, so folders still show offline.
+- **Folders are Lifeline projects.** The menu at the top of the sidebar picks how they're
+  arranged: **By goal** is Lifeline's project tree (in-progress and up-next projects, and any
+  project holding Quill pages), and each of your Lifeline filters ("By product", "By role"…)
+  shows its folders with the projects filed in them. Projects with Quill pages that a filter
+  doesn't place appear under "Not in …". Search finds any project. Pages from before this are
+  in **Unfiled**. Projects and filters are cached, so folders still show offline.
 - **Context:** on launch Quill opens the project whose clock is running in Lifeline.
 - **Docs:** a folder lists its Lifeline docs; clicking one shows it read-only.
 - **Save to Lifeline** makes a doc from the page's transcript in the page's project, and

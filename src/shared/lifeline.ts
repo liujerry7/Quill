@@ -32,6 +32,32 @@ export interface ProjectList {
   error?: string
 }
 
+/** A folder in one of the user's Lifeline filters. It arranges projects; it is not a project itself. */
+export interface FilterFolder {
+  id: string
+  name: string
+  folders: FilterFolder[]
+  /**
+   * Projects and tasks filed directly in this folder. A task that is here only through a filed
+   * project is left out, since it shows under that project.
+   */
+  itemIds: string[]
+}
+
+/** A filter: one arrangement of all the user's projects into folders ("By product", "By role"…). */
+export interface LifelineFilter {
+  id: string
+  name: string
+  folders: FilterFolder[]
+}
+
+export interface FilterList {
+  filters: LifelineFilter[]
+  /** True when Lifeline couldn't be reached and these are the last filters Quill saw. */
+  stale: boolean
+  error?: string
+}
+
 export type SaveResult =
   | { ok: true; docId: string; created: boolean }
   /** `conflict`: the doc changed in Lifeline since Quill last saved it; retry with overwrite to replace it. */
@@ -41,6 +67,7 @@ export interface LifelineApi {
   /** False when LIFELINE_URL / LIFELINE_TOKEN are missing from .env. */
   isConfigured(): Promise<boolean>
   listProjects(): Promise<Result<ProjectList>>
+  listFilters(): Promise<Result<FilterList>>
   /** The project of the clock running in Lifeline right now, if any. */
   currentProjectId(): Promise<Result<string | null>>
   listDocs(projectId: string): Promise<Result<LifelineDocMeta[]>>

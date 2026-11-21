@@ -37,6 +37,7 @@ const ink: ReadApi = {
 const lifeline: LifelineApi = {
   isConfigured: () => ipcRenderer.invoke('lifeline:isConfigured'),
   listProjects: () => ipcRenderer.invoke('lifeline:listProjects'),
+  listFilters: () => ipcRenderer.invoke('lifeline:listFilters'),
   currentProjectId: () => ipcRenderer.invoke('lifeline:currentProjectId'),
   listDocs: (projectId) => ipcRenderer.invoke('lifeline:listDocs', projectId),
   readDoc: (docId) => ipcRenderer.invoke('lifeline:readDoc', docId),

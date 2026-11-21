@@ -287,6 +287,37 @@ button {
   font-weight: 600;
 }
 
+.view-select {
+  font: inherit;
+  font-weight: 600;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 2px 4px;
+  margin-left: -5px;
+  background: none;
+  cursor: pointer;
+  max-width: 200px;
+}
+
+.view-select:hover,
+.view-select:focus {
+  border-color: #e5e7eb;
+  outline: none;
+}
+
+.folder.group .folder-name .label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #6b7280;
+}
+
+.folder.group .folder-name:disabled {
+  cursor: default;
+  background: none;
+}
+
 .sidebar .chip {
   font-size: 11px;
   font-weight: 500;

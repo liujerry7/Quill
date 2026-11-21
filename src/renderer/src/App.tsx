@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { ProjectList } from '../../shared/lifeline'
+import type { FilterList, ProjectList } from '../../shared/lifeline'
 import type { PageMeta } from '../../shared/pages'
 import { PageView } from './PageView'
 import { type DocsState, Sidebar } from './Sidebar'
@@ -51,6 +51,7 @@ export function App() {
   const [currentId, setCurrentId] = useState<string | null>(null)
   const [projects, setProjects] = useState<ProjectList | null>(null)
   const [projectsError, setProjectsError] = useState<string | null>(null)
+  const [filters, setFilters] = useState<FilterList | null>(null)
   const [docs, setDocs] = useState<DocsState>({ status: 'idle' })
   const [openDocId, setOpenDocId] = useState<string | null>(null)
 
@@ -81,6 +82,10 @@ export function App() {
       } else {
         setProjectsError(result.error)
       }
+    })
+    // The user's filters arrange those projects; without them the sidebar shows the project tree.
+    lifeline.listFilters().then((result) => {
+      if (!cancelled && result.ok) setFilters(result.value)
     })
     return () => {
       cancelled = true
@@ -185,6 +190,7 @@ export function App() {
         configured={configured}
         projects={projects}
         projectsError={projectsError}
+        filters={filters}
         pages={pages}
         folderId={folderId}
         currentPageId={currentId}

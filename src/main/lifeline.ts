@@ -5,7 +5,10 @@ import { createHash } from 'node:crypto'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import type {
+  FilterFolder,
+  FilterList,
   LifelineDoc,
+  LifelineFilter,
   LifelineDocMeta,
   LifelineProject,
   ProjectList,
@@ -89,30 +92,71 @@ interface RawProject {
   parent_ids?: string[]
 }
 
-const cacheFile = () => path.join(app.getPath('userData'), 'lifeline', 'projects.json')
-
-export async function listProjects(): Promise<Result<ProjectList>> {
+/**
+ * Fetch from Lifeline and keep a copy in userData/lifeline/<name>.json; when Lifeline can't be
+ * reached, hand back that copy marked stale.
+ */
+async function cached<T>(name: string, fetch: () => Promise<T>): Promise<Result<{ value: T; stale: boolean; error?: string }>> {
+  const file = path.join(app.getPath('userData'), 'lifeline', `${name}.json`)
   try {
-    const raw = await call<RawProject[]>('list_projects')
-    const projects: LifelineProject[] = raw.map((p) => ({
-      id: p.id,
-      name: p.name,
-      status: p.status,
-      parentIds: p.parent_ids ?? [],
-      color: p.color ?? null,
-    }))
-    await fs.mkdir(path.dirname(cacheFile()), { recursive: true })
-    await fs.writeFile(cacheFile(), JSON.stringify(projects), 'utf8')
-    return { ok: true, value: { projects, stale: false } }
+    const value = await fetch()
+    await fs.mkdir(path.dirname(file), { recursive: true })
+    await fs.writeFile(file, JSON.stringify(value), 'utf8')
+    return { ok: true, value: { value, stale: false } }
   } catch (err) {
     const error = err instanceof ToolError ? err.message : `Couldn't reach Lifeline: ${(err as Error).message}`
     try {
-      const projects = JSON.parse(await fs.readFile(cacheFile(), 'utf8')) as LifelineProject[]
-      return { ok: true, value: { projects, stale: true, error } }
+      return { ok: true, value: { value: JSON.parse(await fs.readFile(file, 'utf8')) as T, stale: true, error } }
     } catch {
       return { ok: false, error }
     }
   }
+}
+
+export async function listProjects(): Promise<Result<ProjectList>> {
+  const result = await cached('projects', async () =>
+    (await call<RawProject[]>('list_projects')).map(
+      (p): LifelineProject => ({
+        id: p.id,
+        name: p.name,
+        status: p.status,
+        parentIds: p.parent_ids ?? [],
+        color: p.color ?? null,
+      }),
+    ),
+  )
+  if (!result.ok) return result
+  const { value, ...rest } = result.value
+  return { ok: true, value: { projects: value, ...rest } }
+}
+
+// ---- filters: the user's own arrangements of projects into folders ------------------
+
+interface RawFilterFolder {
+  id: string
+  name: string
+  folders?: RawFilterFolder[]
+  projects?: { id: string }[]
+  /** `via` names the filed project a task is here through; absent when the task is filed directly. */
+  tasks?: { id: string; via?: string }[]
+}
+
+const toFolder = (f: RawFilterFolder): FilterFolder => ({
+  id: f.id,
+  name: f.name,
+  folders: (f.folders ?? []).map(toFolder),
+  itemIds: [...(f.projects ?? []).map((p) => p.id), ...(f.tasks ?? []).filter((t) => !t.via).map((t) => t.id)],
+})
+
+export async function listFilters(): Promise<Result<FilterList>> {
+  const result = await cached('filters', async () =>
+    (await call<{ id: string; name: string; folders?: RawFilterFolder[] }[]>('list_filters')).map(
+      (f): LifelineFilter => ({ id: f.id, name: f.name, folders: (f.folders ?? []).map(toFolder) }),
+    ),
+  )
+  if (!result.ok) return result
+  const { value, ...rest } = result.value
+  return { ok: true, value: { filters: value, ...rest } }
 }
 
 // ---- context: what Lifeline says you're working on --------------------------------

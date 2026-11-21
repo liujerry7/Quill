@@ -31,6 +31,7 @@ function registerPageHandlers() {
 
   ipcMain.handle('lifeline:isConfigured', () => lifeline.isConfigured())
   ipcMain.handle('lifeline:listProjects', () => lifeline.listProjects())
+  ipcMain.handle('lifeline:listFilters', () => lifeline.listFilters())
   ipcMain.handle('lifeline:currentProjectId', () => lifeline.currentProjectId())
   ipcMain.handle('lifeline:listDocs', (_e, projectId: string) => lifeline.listDocs(projectId))
   ipcMain.handle('lifeline:readDoc', (_e, docId: string) => lifeline.readDoc(docId))
