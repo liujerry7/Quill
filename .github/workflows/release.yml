@@ -37,14 +37,30 @@ jobs:
           # Optional: without it the canvas runs unlicensed. Add it under Settings > Secrets > Actions.
           RENDERER_VITE_TLDRAW_LICENSE_KEY: ${{ secrets.TLDRAW_LICENSE_KEY }}
 
-      - name: Package and upload to a draft release
+      # electron-builder uploads its files in parallel, and each upload creates the release if it
+      # can't find one, so without this there end up several. Creating the draft first gives them
+      # one release to share.
+      - name: Create the draft release
+        shell: bash
+        run: gh release create "v0.1.${{ github.run_number }}" --draft --title "0.1.${{ github.run_number }}" --target "${{ github.sha }}" --notes "Built from ${{ github.sha }}."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Package and upload to the draft
         run: npx electron-builder --win --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Only now, with the installer, blockmap and latest.yml all uploaded, can installed copies see it.
-      - name: Publish the release
+      - name: Check every file is there, then publish
         shell: bash
-        run: gh release edit "v0.1.${{ github.run_number }}" --draft=false --latest --target "${{ github.sha }}"
+        run: |
+          tag="v0.1.${{ github.run_number }}"
+          assets=$(gh release view "$tag" --json assets -q '[.assets[].name] | join(" ")')
+          echo "assets: $assets"
+          for f in latest.yml "Quill-Setup-0.1.${{ github.run_number }}.exe" "Quill-Setup-0.1.${{ github.run_number }}.exe.blockmap"; do
+            [[ " $assets " == *" $f "* ]] || { echo "::error::$f is missing from $tag"; exit 1; }
+          done
+          gh release edit "$tag" --draft=false --latest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
