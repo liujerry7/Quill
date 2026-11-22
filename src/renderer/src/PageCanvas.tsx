@@ -61,5 +61,12 @@ export function PageCanvas({ pageId, onEditor }: Props) {
 
   if (!loaded) return null
   // A Quill page is one tldraw page, so hide tldraw's own page menu to avoid two kinds of "page".
-  return <Tldraw snapshot={loaded.snapshot} onMount={setEditor} components={HIDDEN_UI} />
+  return (
+    <Tldraw
+      snapshot={loaded.snapshot}
+      onMount={setEditor}
+      components={HIDDEN_UI}
+      licenseKey={import.meta.env.RENDERER_VITE_TLDRAW_LICENSE_KEY}
+    />
+  )
 }

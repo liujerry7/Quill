@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { FilterList, ProjectList } from '../../shared/lifeline'
 import type { PageMeta } from '../../shared/pages'
+import { Banners } from './Banners'
 import { PageView } from './PageView'
 import { type DocsState, Sidebar } from './Sidebar'
 
@@ -186,6 +187,7 @@ export function App() {
 
   return (
     <div className="app">
+      <Banners />
       <Sidebar
         configured={configured}
         projects={projects}

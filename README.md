@@ -3,13 +3,31 @@
 Handwritten notes on a drawing tablet. Claude reads the ink, and Quill saves the
 transcription to Lifeline. Electron + Vite + React + TypeScript, with a tldraw canvas.
 
-## Run
+## Install
+
+Download `Quill-Setup-<version>.exe` from the latest
+[release](https://github.com/liujerry7/Quill/releases/latest) and run it. Windows may warn about
+an unknown publisher the first time, since the installer isn't code-signed: choose "More info",
+then "Run anyway".
+
+On first launch Quill asks for its keys: **Open .env** opens `%APPDATA%\quill\.env`; fill it in,
+save, and press **Restart**.
+
+**Updates are automatic.** Every push to `main` builds a new release (GitHub Actions,
+`.github/workflows/release.yml`). When Quill opens it checks for one, downloads it in the
+background and offers **Restart to update**; ignore that and it installs the next time Quill quits.
+
+## Develop
 
 ```
 npm install      # postinstall fetches the Electron binary
-npm run dev      # the app, with hot reload
+npm run dev      # the app, with hot reload; keys come from this folder's .env
 npm run check    # typecheck + build
+npm run dist     # build the installer locally into dist/ (publishes nothing)
 ```
+
+Only one Quill runs per data folder, so with the installed app open, `npm run dev` just brings
+it to the front. Close it first (or use `QUILL_USER_DATA`, below) to run from source.
 
 ## Where notes live
 
@@ -24,7 +42,7 @@ Pages autosave (400 ms after the last change, and again before the window closes
 ## Lifeline
 
 Quill is an MCP client of Lifeline's own `/mcp` endpoint (no Lifeline changes). Put
-`LIFELINE_URL` and `LIFELINE_TOKEN` in `.env` (Settings ▸ AI access in Lifeline gives both;
+`LIFELINE_URL` and `LIFELINE_TOKEN` in Quill's `.env` (Settings ▸ AI access in Lifeline gives both;
 the token needs read-and-write). Then:
 
 - **Folders are Lifeline projects.** The menu at the top of the sidebar picks how they're
@@ -49,6 +67,8 @@ Point a test run at a scratch data folder so it never touches real notes:
 - [x] Step 1: canvas, pen pressure, autosave, page list
 - [x] Step 2: Read handwriting with Claude (main process holds the key)
 - [x] Step 3: Lifeline projects as folders, docs view, Save to Lifeline
+- [x] Windows installer with automatic updates from GitHub Releases
 
-`npm run dev` has tldraw fully unlocked. A packaged production build will need a tldraw
-license key (a free hobby key is fine).
+`npm run dev` has tldraw fully unlocked. Release builds read a tldraw license key (a free hobby
+key is fine) from the `TLDRAW_LICENSE_KEY` repository secret; without one the canvas runs
+unlicensed.

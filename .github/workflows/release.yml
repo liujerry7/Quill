@@ -1,0 +1,43 @@
+# Every push to main builds the Windows installer and publishes it as a GitHub Release.
+# Installed copies of Quill check those releases when they open and offer to restart into
+# the new version. Each run gets its own version, 0.1.<run number>.
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write # create the release and upload the installer
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Version this build
+        run: npm version 0.1.${{ github.run_number }} --no-git-tag-version
+
+      - name: Typecheck and build
+        run: npm run check
+        env:
+          # Optional: without it the canvas runs unlicensed. Add it under Settings > Secrets > Actions.
+          RENDERER_VITE_TLDRAW_LICENSE_KEY: ${{ secrets.TLDRAW_LICENSE_KEY }}
+
+      - name: Package and publish
+        run: npx electron-builder --win --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

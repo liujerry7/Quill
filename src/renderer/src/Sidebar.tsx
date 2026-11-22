@@ -165,7 +165,8 @@ export function Sidebar(props: Props) {
       {!configured && (
         <p className="note">
           Connect Lifeline to use its projects as folders: add <code>LIFELINE_URL</code> and{' '}
-          <code>LIFELINE_TOKEN</code> to Quill's <code>.env</code> and restart.
+          <code>LIFELINE_TOKEN</code> to Quill's{' '}
+          <button className="link" onClick={() => window.quill.app.openEnv()}>.env</button> and restart.
         </p>
       )}
       {configured && projectsError && <p className="note error-text">{projectsError}</p>}

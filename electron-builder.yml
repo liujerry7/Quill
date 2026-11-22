@@ -1,0 +1,31 @@
+# Packages Quill as a Windows installer and publishes it to GitHub Releases, where the
+# installed app looks for updates. CI runs this on every push to main (.github/workflows).
+appId: app.quill
+productName: Quill
+directories:
+  output: dist
+  buildResources: resources
+# Only the built app goes in. Production dependencies are added by electron-builder.
+# Never .env: the installed app reads its keys from %APPDATA%\quill\.env instead.
+files:
+  - out/**
+  - resources/**
+  - package.json
+asarUnpack:
+  - resources/**
+npmRebuild: false
+win:
+  target: nsis
+  icon: resources/icon.ico
+nsis:
+  artifactName: Quill-Setup-${version}.${ext}
+  shortcutName: Quill
+  uninstallDisplayName: Quill
+  createDesktopShortcut: always
+  # Notes live in %APPDATA%\quill; uninstalling must never take them.
+  deleteAppDataOnUninstall: false
+publish:
+  provider: github
+  owner: liujerry7
+  repo: Quill
+  releaseType: release

@@ -10,18 +10,13 @@
     "build": "electron-vite build",
     "start": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "check": "npm run typecheck && npm run build"
+    "check": "npm run typecheck && npm run build",
+    "dist": "npm run build && electron-builder --win --publish never"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.12.0",
     "@modelcontextprotocol/sdk": "^1.32.2",
-    "katex": "^0.19.1",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1",
-    "react-markdown": "^10.1.0",
-    "rehype-katex": "^7.0.1",
-    "remark-math": "^6.0.0",
-    "tldraw": "^5.6.2"
+    "electron-updater": "^6.8.11"
   },
   "overrides": {
     "katex": "$katex"
@@ -32,7 +27,15 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.3.0",
     "electron": "^45.4.1",
+    "electron-builder": "^26.18.1",
     "electron-vite": "^6.0.0",
+    "katex": "^0.19.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-markdown": "^10.1.0",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0",
+    "tldraw": "^5.6.2",
     "typescript": "^7.0.2",
     "vite": "^8.3.8"
   }

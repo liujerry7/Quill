@@ -15,7 +15,7 @@ const SYSTEM = `You transcribe handwritten notes from an image into clean Markdo
 // The key stays in the main process; the renderer only ever sees the transcription.
 let client: Anthropic | null = null
 function getClient(): Anthropic | null {
-  const apiKey = process.env.ANTHROPIC_API_KEY
+  const apiKey = process.env.ANTHROPIC_API_KEY?.trim()
   if (!apiKey) return null
   client ??= new Anthropic({ apiKey })
   return client
@@ -24,7 +24,7 @@ function getClient(): Anthropic | null {
 export async function readInk(pngBase64: string): Promise<ReadResult> {
   const anthropic = getClient()
   if (!anthropic) {
-    return { ok: false, error: 'No ANTHROPIC_API_KEY. Add it to Quill\'s .env file (see .env.example) and restart.' }
+    return { ok: false, error: 'No ANTHROPIC_API_KEY yet. Use "Open .env" at the top of the window to add it, then restart.' }
   }
 
   try {

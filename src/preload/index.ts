@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import type { AppApi } from '../shared/app'
 import type { LifelineApi } from '../shared/lifeline'
 import type { PagesApi } from '../shared/pages'
 import type { ReadApi } from '../shared/read'
@@ -44,4 +45,19 @@ const lifeline: LifelineApi = {
   savePage: (pageId, opts) => ipcRenderer.invoke('lifeline:savePage', pageId, opts),
 }
 
-contextBridge.exposeInMainWorld('quill', { pages, ink, lifeline, onFlushRequest })
+const appApi: AppApi = {
+  setup: () => ipcRenderer.invoke('app:setup'),
+  openEnv: () => ipcRenderer.invoke('app:openEnv'),
+  restart: () => ipcRenderer.invoke('app:restart'),
+  updateReady: () => ipcRenderer.invoke('app:updateReady'),
+  onUpdateReady: (fn) => {
+    const listener = (_e: Electron.IpcRendererEvent, version: string) => fn(version)
+    ipcRenderer.on('app:updateReady', listener)
+    return () => {
+      ipcRenderer.removeListener('app:updateReady', listener)
+    }
+  },
+  installUpdate: () => ipcRenderer.invoke('app:installUpdate'),
+}
+
+contextBridge.exposeInMainWorld('quill', { app: appApi, pages, ink, lifeline, onFlushRequest })
