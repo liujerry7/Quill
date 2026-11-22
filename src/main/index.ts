@@ -50,7 +50,11 @@ function registerHandlers() {
     lifeline.savePage(pageId, opts),
   )
 
-  ipcMain.handle('files:openMarkdown', (e) => files.openMarkdown(e.sender))
+  ipcMain.handle('files:list', () => files.listFiles())
+  ipcMain.handle('files:pick', (e, projectId: string | null) => files.pickFile(e.sender, projectId))
+  ipcMain.handle('files:add', (_e, file: string, projectId: string | null) => files.addFile(file, projectId))
+  ipcMain.handle('files:remove', (_e, id: string) => files.removeFile(id))
+  ipcMain.handle('files:read', (_e, id: string) => files.readFile(id))
 
   ipcMain.handle('app:setup', () => setupStatus())
   ipcMain.handle('app:openEnv', async () => {

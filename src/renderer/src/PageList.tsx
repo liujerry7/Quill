@@ -1,17 +1,24 @@
 import { useState } from 'react'
+import type { MarkdownFile } from '../../shared/files'
 import type { PageMeta } from '../../shared/pages'
 
 interface Props {
   pages: PageMeta[]
+  files: MarkdownFile[]
   currentId: string | null
+  currentFileId: string | null
   onSelect(id: string): void
   onCreate(): void
   onRename(id: string, name: string): void
   onRemove(id: string): void
+  onSelectFile(id: string): void
+  onAddFile(): void
+  onRemoveFile(id: string): void
 }
 
-/** The Quill pages inside one folder. */
-export function PageList({ pages, currentId, onSelect, onCreate, onRename, onRemove }: Props) {
+/** What's inside one folder: Quill pages (ink) and Markdown files (read-only), each labelled. */
+export function PageList(props: Props) {
+  const { pages, files, currentId, currentFileId, onSelect, onCreate, onRename, onRemove } = props
   const [editingId, setEditingId] = useState<string | null>(null)
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
 
@@ -39,7 +46,8 @@ export function PageList({ pages, currentId, onSelect, onCreate, onRename, onRem
               onDoubleClick={() => setEditingId(page.id)}
               title={page.lifeline ? 'Saved to Lifeline. Double-click to rename' : 'Double-click to rename'}
             >
-              {page.name}
+              <span className="kind page">Page</span>
+              <span className="label">{page.name}</span>
               {page.lifeline && <span className="saved-dot" aria-label="saved to Lifeline" />}
             </button>
           )}
@@ -63,8 +71,37 @@ export function PageList({ pages, currentId, onSelect, onCreate, onRename, onRem
           )}
         </li>
       ))}
-      <li>
+      {files.map((file) => (
+        <li key={file.id} className={file.id === currentFileId ? 'current' : ''}>
+          <button className="name" onClick={() => props.onSelectFile(file.id)} title={file.path}>
+            <span className="kind file">MD</span>
+            <span className="label">{file.name}</span>
+          </button>
+          {confirmingId === file.id ? (
+            <span className="confirm">
+              <button
+                onClick={() => {
+                  props.onRemoveFile(file.id)
+                  setConfirmingId(null)
+                }}
+                title="Takes it out of Quill; the file itself stays where it is"
+              >
+                Remove
+              </button>
+              <button onClick={() => setConfirmingId(null)}>Keep</button>
+            </span>
+          ) : (
+            <span className="actions">
+              <button onClick={() => setConfirmingId(file.id)} title="Remove from Quill (the file stays on disk)">×</button>
+            </span>
+          )}
+        </li>
+      ))}
+      <li className="adders">
         <button className="new-page" onClick={onCreate}>+ New page</button>
+        <button className="new-page" onClick={props.onAddFile} title="Or drop .md files onto the window">
+          + Markdown file
+        </button>
       </li>
     </ul>
   )

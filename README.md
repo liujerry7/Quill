@@ -39,6 +39,11 @@ Pages autosave (400 ms after the last change, and again before the window closes
 - `<id>.md` — that page's transcript
 - `trash\<id>.json` — deleted pages, kept in case of a slip
 
+Markdown files can sit in a folder beside pages (**+ Markdown file**, or drop `.md` files onto the
+window). They're labelled **MD** and open read-only in the content window, read fresh from disk
+each time. Quill only remembers where they are (`%APPDATA%\quill\markdown.json`); removing one
+from Quill leaves the file alone.
+
 ## Lifeline
 
 Quill is an MCP client of Lifeline's own `/mcp` endpoint (no Lifeline changes). Put

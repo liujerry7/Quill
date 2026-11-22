@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
+import type { MarkdownFile } from '../../shared/files'
 import type { FilterList, LifelineDocMeta, ProjectList } from '../../shared/lifeline'
 import type { PageMeta } from '../../shared/pages'
+import type { Reading } from './DocView'
 import { PageList } from './PageList'
 import { ProjectPicker } from './ProjectPicker'
 import { buildFilterTree, buildTree, pathTo, type TreeNode } from './projectTree'
@@ -29,19 +31,25 @@ interface Props {
   projectsError: string | null
   filters: FilterList | null
   pages: PageMeta[]
+  markdownFiles: MarkdownFile[]
   /** The open folder: a Lifeline project id, or null for Unfiled. */
   folderId: string | null
   currentPageId: string | null
   docs: DocsState
-  openDocId: string | null
+  /** The doc or Markdown file open in the content window, if any. */
+  reading: Reading | null
+  /** Why adding a Markdown file failed, if it did. */
+  fileError: string | null
   onSelectFolder(id: string | null): void
   onSelectPage(id: string): void
   onCreatePage(): void
   onRenamePage(id: string, name: string): void
   onRemovePage(id: string): void
   onOpenDoc(id: string): void
-  /** Pick a Markdown file from disk to read. */
-  onOpenFile(): void
+  onOpenFile(id: string): void
+  /** Pick a Markdown file from disk and add it to the open folder. */
+  onAddFile(): void
+  onRemoveFile(id: string): void
 }
 
 /** Quill's folders are Lifeline's projects. */
@@ -63,14 +71,15 @@ export function Sidebar(props: Props) {
 
   const pageCount = useMemo(() => {
     const counts = new Map<string | null, number>()
-    for (const p of pages) counts.set(p.projectId, (counts.get(p.projectId) ?? 0) + 1)
+    for (const p of [...pages, ...props.markdownFiles]) counts.set(p.projectId, (counts.get(p.projectId) ?? 0) + 1)
     return counts
-  }, [pages])
+  }, [pages, props.markdownFiles])
 
   const tree = useMemo(() => {
-    const withPages = new Set(pages.flatMap((p) => (p.projectId ? [p.projectId] : [])))
+    // Folders holding pages or Markdown files always show, so nothing in Quill is out of reach.
+    const withPages = new Set([...pages, ...props.markdownFiles].flatMap((p) => (p.projectId ? [p.projectId] : [])))
     return filter ? buildFilterTree(list, filter, withPages, folderId) : buildTree(list, withPages, folderId)
-  }, [list, filter, pages, folderId])
+  }, [list, filter, pages, props.markdownFiles, folderId])
 
   // The open folder can sit in more than one place; its contents show at the first one only.
   const openPath = useMemo(() => (folderId ? pathTo(tree, folderId) : null), [tree, folderId])
@@ -189,12 +198,6 @@ export function Sidebar(props: Props) {
           {folderId === null && <div style={{ paddingLeft: 20 }}>{contents}</div>}
         </li>
       </ul>
-
-      <footer>
-        <button className="open-file" onClick={props.onOpenFile} title="Or drop a .md file onto the window">
-          Open Markdown file…
-        </button>
-      </footer>
     </aside>
   )
 }
@@ -202,17 +205,24 @@ export function Sidebar(props: Props) {
 function FolderContents(props: Props) {
   const { pages, folderId, docs } = props
   const inFolder = pages.filter((p) => p.projectId === folderId)
+  const filesInFolder = props.markdownFiles.filter((f) => f.projectId === folderId)
   const fromQuill = new Set(pages.flatMap((p) => (p.lifeline ? [p.lifeline.docId] : [])))
   return (
     <div className="folder-contents">
       <PageList
         pages={inFolder}
+        files={filesInFolder}
         currentId={props.currentPageId}
+        currentFileId={props.reading?.kind === 'file' ? props.reading.id : null}
         onSelect={props.onSelectPage}
         onCreate={props.onCreatePage}
         onRename={props.onRenamePage}
         onRemove={props.onRemovePage}
+        onSelectFile={props.onOpenFile}
+        onAddFile={props.onAddFile}
+        onRemoveFile={props.onRemoveFile}
       />
+      {props.fileError && <p className="muted small error-text">{props.fileError}</p>}
       {folderId !== null && props.configured && (
         <div className="docs">
           <div className="docs-heading">In Lifeline</div>
@@ -224,7 +234,7 @@ function FolderContents(props: Props) {
               {docs.docs.map((d) => (
                 <li key={d.id}>
                   <button
-                    className={`doc${d.id === props.openDocId ? ' current' : ''}`}
+                    className={`doc${props.reading?.kind === 'lifeline' && d.id === props.reading.docId ? ' current' : ''}`}
                     onClick={() => props.onOpenDoc(d.id)}
                     title={d.title}
                   >

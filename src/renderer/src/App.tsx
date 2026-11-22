@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import type { MarkdownFile } from '../../shared/files'
 import type { FilterList, ProjectList } from '../../shared/lifeline'
 import type { PageMeta } from '../../shared/pages'
 import { Banners } from './Banners'
@@ -9,7 +10,12 @@ import { type DocsState, Sidebar } from './Sidebar'
 const pagesApi = window.quill.pages
 const lifeline = window.quill.lifeline
 
-const MARKDOWN = /.(md|markdown|mdown|txt)$/i
+const MARKDOWN = /\.(md|markdown|mdown|txt)$/i
+const filesApi = window.quill.files
+
+// ipcRenderer.invoke wraps errors thrown in main; show just the message.
+const cleanError = (err: unknown) =>
+  (err as Error).message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '')
 
 /** How long launch waits for Lifeline's running clock before opening the last page instead. */
 const CONTEXT_WAIT_MS = 2500
@@ -58,6 +64,12 @@ export function App() {
   const [filters, setFilters] = useState<FilterList | null>(null)
   const [docs, setDocs] = useState<DocsState>({ status: 'idle' })
   const [reading, setReading] = useState<Reading | null>(null)
+  const [markdownFiles, setMarkdownFiles] = useState<MarkdownFile[]>([])
+  const [fileError, setFileError] = useState<string | null>(null)
+
+  useEffect(() => {
+    filesApi.list().then(setMarkdownFiles)
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -182,26 +194,47 @@ export function App() {
     loadDocs(folderId)
   }, [folderId, loadDocs])
 
-  const openFile = useCallback(async () => {
-    try {
-      const doc = await window.quill.files.openMarkdown()
-      if (doc) setReading({ kind: 'file', doc })
-    } catch (err) {
-      setReading({ kind: 'file', doc: { name: 'Couldn’t open that file', markdown: (err as Error).message, path: null, modifiedAt: null } })
-    }
+  // A Markdown file joins the open folder and opens in the content window.
+  const showAdded = useCallback((file: MarkdownFile) => {
+    setMarkdownFiles((prev) => (prev.some((f) => f.id === file.id) ? prev : [...prev, file]))
+    setReading({ kind: 'file', id: file.id })
+    setFileError(null)
   }, [])
 
-  // Drop a Markdown file anywhere to read it. Other drops (images onto the canvas) pass through.
+  const addFile = useCallback(async () => {
+    try {
+      const file = await filesApi.pick(folderId)
+      if (file) showAdded(file)
+    } catch (err) {
+      setFileError(cleanError(err))
+    }
+  }, [folderId, showAdded])
+
+  const removeFile = useCallback(async (id: string) => {
+    await filesApi.remove(id)
+    setMarkdownFiles((prev) => prev.filter((f) => f.id !== id))
+    setReading((r) => (r?.kind === 'file' && r.id === id ? null : r))
+  }, [])
+
+  // Drop Markdown files anywhere to add them to the open folder. Other drops (images onto the
+  // canvas) pass through to tldraw.
   const allowFileDrop = (e: React.DragEvent) => {
     if (e.dataTransfer.types.includes('Files')) e.preventDefault()
   }
   const dropMarkdown = async (e: React.DragEvent) => {
-    const file = [...e.dataTransfer.files].find((f) => MARKDOWN.test(f.name))
-    if (!file) return
+    const dropped = [...e.dataTransfer.files].filter((f) => MARKDOWN.test(f.name))
+    if (dropped.length === 0) return
     e.preventDefault()
-    e.stopPropagation() // keep tldraw from also dropping it onto the canvas
-    if (file.size > 5 * 1024 * 1024) return
-    setReading({ kind: 'file', doc: { name: file.name, markdown: await file.text(), path: null, modifiedAt: null } })
+    e.stopPropagation() // keep tldraw from also dropping them onto the canvas
+    for (const f of dropped) {
+      const filePath = filesApi.pathForFile(f)
+      if (!filePath) continue
+      try {
+        showAdded(await filesApi.add(filePath, folderId))
+      } catch (err) {
+        setFileError(cleanError(err))
+      }
+    }
   }
 
   if (!ready) return <div className="loading">Opening Quill…</div>
@@ -219,33 +252,35 @@ export function App() {
         projectsError={projectsError}
         filters={filters}
         pages={pages}
+        markdownFiles={markdownFiles}
         folderId={folderId}
-        currentPageId={currentId}
+        currentPageId={reading ? null : currentId}
+        reading={reading}
+        fileError={fileError}
         docs={docs}
-        openDocId={reading?.kind === 'lifeline' ? reading.docId : null}
         onSelectFolder={selectFolder}
         onSelectPage={selectPage}
         onCreatePage={createPage}
         onRenamePage={renamePage}
         onRemovePage={removePage}
         onOpenDoc={(docId) => setReading({ kind: 'lifeline', docId })}
-        onOpenFile={openFile}
+        onOpenFile={(id) => setReading({ kind: 'file', id })}
+        onAddFile={addFile}
+        onRemoveFile={removeFile}
       />
-      {page ? (
+      {reading ? (
+        // Docs and Markdown files open in the content window, read-only.
+        <DocView reading={reading} closeLabel={page ? 'Back to page' : 'Close'} onClose={() => setReading(null)} />
+      ) : page ? (
         // Keyed by page so each page gets a fresh editor, store and transcript.
         <PageView
           key={page.id}
           page={page}
           configured={configured}
           projects={projects?.projects ?? []}
-          reading={reading}
-          onCloseReading={() => setReading(null)}
           onMove={(projectId) => movePage(page.id, projectId)}
           onSaved={afterSave}
         />
-      ) : reading ? (
-        // No page open here: the document gets the whole window.
-        <DocView reading={reading} closeLabel="Close" onClose={() => setReading(null)} />
       ) : (
         <div className="empty">
           <p>No pages in {folderName} yet.</p>

@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { AppApi } from '../shared/app'
 import type { FilesApi } from '../shared/files'
 import type { LifelineApi } from '../shared/lifeline'
@@ -62,7 +62,12 @@ const appApi: AppApi = {
 }
 
 const files: FilesApi = {
-  openMarkdown: () => ipcRenderer.invoke('files:openMarkdown'),
+  list: () => ipcRenderer.invoke('files:list'),
+  pick: (projectId) => ipcRenderer.invoke('files:pick', projectId),
+  add: (path, projectId) => ipcRenderer.invoke('files:add', path, projectId),
+  remove: (id) => ipcRenderer.invoke('files:remove', id),
+  read: (id) => ipcRenderer.invoke('files:read', id),
+  pathForFile: (file) => webUtils.getPathForFile(file),
 }
 
 contextBridge.exposeInMainWorld('quill', { app: appApi, pages, ink, lifeline, files, onFlushRequest })
