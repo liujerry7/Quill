@@ -9,6 +9,9 @@ export interface LifelineLink {
   savedAt: string
 }
 
+/** The page's background: blank, ruled lines, or graph paper. */
+export type Paper = 'plain' | 'lined' | 'graph'
+
 export interface PageMeta {
   id: string
   name: string
@@ -17,6 +20,17 @@ export interface PageMeta {
   lifeline: LifelineLink | null
   createdAt: string
   updatedAt: string
+  /** Missing = plain. */
+  paper?: Paper
+  /** When the ink last changed. */
+  inkAt?: string
+  /** When the ink was last read automatically (the transcript reflects the ink as of then). */
+  readAt?: string
+  /**
+   * True while the transcript is exactly what Claude last read, so auto-read may replace it;
+   * false once it's been edited by hand. Missing (older pages): auto only if it's empty.
+   */
+  transcriptAuto?: boolean
 }
 
 /** The tldraw document snapshot, stored opaquely (main never looks inside). */
@@ -24,6 +38,7 @@ export type PageContent = unknown
 
 export interface PagesApi {
   list(): Promise<PageMeta[]>
+  get(id: string): Promise<PageMeta>
   create(projectId: string | null, name?: string): Promise<PageMeta>
   rename(id: string, name: string): Promise<PageMeta>
   /** Move a page to another folder (Lifeline project), or to Unfiled with null. */
@@ -33,7 +48,9 @@ export interface PagesApi {
   save(id: string, content: PageContent): Promise<void>
   /** The page's Markdown transcription (empty string if it has none yet). */
   loadTranscript(id: string): Promise<string>
-  saveTranscript(id: string, markdown: string): Promise<void>
+  /** Save the transcript. With readAt it's an automatic read of the ink as of then; without, a hand edit. */
+  saveTranscript(id: string, markdown: string, readAt?: string): Promise<void>
+  setPaper(id: string, paper: Paper): Promise<PageMeta>
   /** The page that was open when Quill last closed, if it still exists. */
   getLastOpened(): Promise<string | null>
   setLastOpened(id: string): Promise<void>

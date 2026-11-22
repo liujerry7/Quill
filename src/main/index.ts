@@ -7,6 +7,7 @@ import * as pages from './pageStore'
 import { readInk } from './read'
 import { ensureEnvFile, loadEnv, setupStatus } from './setup'
 import { checkForUpdates, installUpdate, updateReady } from './updates'
+import type { Paper } from '../shared/pages'
 
 // Test runs point Quill at a scratch data folder so they never touch real notes.
 if (process.env.QUILL_USER_DATA) app.setPath('userData', process.env.QUILL_USER_DATA)
@@ -28,6 +29,7 @@ if (!app.requestSingleInstanceLock()) {
 
 function registerHandlers() {
   ipcMain.handle('pages:list', () => pages.listPages())
+  ipcMain.handle('pages:get', (_e, id: string) => pages.getPage(id))
   ipcMain.handle('pages:create', (_e, projectId: string | null, name?: string) => pages.createPage(projectId, name))
   ipcMain.handle('pages:rename', (_e, id: string, name: string) => pages.renamePage(id, name))
   ipcMain.handle('pages:setProject', (_e, id: string, projectId: string | null) => pages.setPageProject(id, projectId))
@@ -35,7 +37,10 @@ function registerHandlers() {
   ipcMain.handle('pages:load', (_e, id: string) => pages.loadPage(id))
   ipcMain.handle('pages:save', (_e, id: string, content: unknown) => pages.savePage(id, content))
   ipcMain.handle('pages:loadTranscript', (_e, id: string) => pages.loadTranscript(id))
-  ipcMain.handle('pages:saveTranscript', (_e, id: string, md: string) => pages.saveTranscript(id, md))
+  ipcMain.handle('pages:saveTranscript', (_e, id: string, md: string, readAt?: string) =>
+    pages.saveTranscript(id, md, typeof readAt === 'string' ? readAt : undefined),
+  )
+  ipcMain.handle('pages:setPaper', (_e, id: string, paper: Paper) => pages.setPagePaper(id, paper))
   ipcMain.handle('pages:getLastOpened', () => pages.getLastOpened())
   ipcMain.handle('pages:setLastOpened', (_e, id: string) => pages.setLastOpened(id))
   ipcMain.handle('ink:read', (_e, pngBase64: string) => readInk(pngBase64))

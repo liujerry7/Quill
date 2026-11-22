@@ -39,6 +39,14 @@ Pages autosave (400 ms after the last change, and again before the window closes
 - `<id>.md` — that page's transcript
 - `trash\<id>.json` — deleted pages, kept in case of a slip
 
+**Writing:** Quill reads the whole page by itself about 4 seconds after the pen rests, and the
+read becomes the page's transcript (the **Transcript** button shows it; it's hidden by default).
+Edit the transcript by hand and auto-read pauses for that page so it never overwrites your
+corrections; **File ▸ Read page now** replaces it with a fresh read and resumes. Each read sends
+the page image to Claude, so it costs a little per pause. **File ▸ Paper** sets plain, lined or
+graph paper per page (new pages take the last one chosen); the lines aren't part of what Claude
+reads. Pen size **S** is a fine tip. The **«** at the top of the folders hides them to a rail.
+
 Markdown files can sit in a folder beside pages (**+ Markdown file**, or drop `.md` files onto the
 window). They're labelled **MD** and open read-only in the content window, read fresh from disk
 each time. Quill only remembers where they are (`%APPDATA%\quill\markdown.json`); removing one
@@ -58,7 +66,7 @@ the token needs read-and-write). Then:
   in **Unfiled**. Projects and filters are cached, so folders still show offline.
 - **Context:** on launch Quill opens the project whose clock is running in Lifeline.
 - **Docs:** a folder lists its Lifeline docs; clicking one shows it read-only.
-- **Save to Lifeline** makes a doc from the page's transcript in the page's project, and
+- **File ▸ Save to Lifeline** makes a doc from the page's transcript in the page's project, and
   later saves update that same doc. If the doc was edited in Lifeline since, Quill asks
   before replacing it. (Lifeline has no uploads, so the ink stays local.)
 

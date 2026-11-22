@@ -50,6 +50,8 @@ interface Props {
   /** Pick a Markdown file from disk and add it to the open folder. */
   onAddFile(): void
   onRemoveFile(id: string): void
+  /** Collapse the sidebar to a thin rail. */
+  onHide(): void
 }
 
 /** Quill's folders are Lifeline's projects. */
@@ -168,9 +170,14 @@ export function Sidebar(props: Props) {
         ) : (
           <span>Folders</span>
         )}
-        {configured && stale && (
-          <span className="chip" title={projects?.error ?? filters?.error}>offline</span>
-        )}
+        <span className="header-end">
+          {configured && stale && (
+            <span className="chip" title={projects?.error ?? filters?.error}>offline</span>
+          )}
+          <button className="icon-button" onClick={props.onHide} aria-label="Hide folders" title="Hide folders">
+            «
+          </button>
+        </span>
       </header>
 
       {!configured && (

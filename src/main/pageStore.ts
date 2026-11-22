@@ -2,7 +2,7 @@ import { app } from 'electron'
 import { randomUUID } from 'node:crypto'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
-import type { LifelineLink, PageContent, PageMeta } from '../shared/pages'
+import type { LifelineLink, PageContent, PageMeta, Paper } from '../shared/pages'
 
 // Layout under the app's user-data folder:
 //   pages/index.json      { pages: PageMeta[], lastOpened: string | null }
@@ -155,7 +155,7 @@ export async function savePage(id: string, content: PageContent): Promise<void> 
   await editIndex(async (index) => {
     const page = findPage(index, id)
     await writeAtomic(pageFile(id), JSON.stringify(content))
-    page.updatedAt = new Date().toISOString()
+    page.updatedAt = page.inkAt = new Date().toISOString()
   })
 }
 
@@ -169,12 +169,26 @@ export async function loadTranscript(id: string): Promise<string> {
   }
 }
 
-export async function saveTranscript(id: string, markdown: string): Promise<void> {
+export async function saveTranscript(id: string, markdown: string, readAt?: string): Promise<void> {
   checkId(id)
   await editIndex(async (index) => {
     const page = findPage(index, id)
     await writeAtomic(transcriptFile(id), markdown)
     page.updatedAt = new Date().toISOString()
+    page.transcriptAuto = readAt !== undefined
+    if (readAt !== undefined) page.readAt = readAt
+  })
+}
+
+const PAPERS: Paper[] = ['plain', 'lined', 'graph']
+
+export function setPagePaper(id: string, paper: Paper): Promise<PageMeta> {
+  checkId(id)
+  if (!PAPERS.includes(paper)) throw new Error(`Unknown paper: ${paper}`)
+  return editIndex((index) => {
+    const page = findPage(index, id)
+    page.paper = paper
+    return { ...page }
   })
 }
 

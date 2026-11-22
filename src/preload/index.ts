@@ -7,6 +7,7 @@ import type { ReadApi } from '../shared/read'
 
 const pages: PagesApi = {
   list: () => ipcRenderer.invoke('pages:list'),
+  get: (id) => ipcRenderer.invoke('pages:get', id),
   create: (projectId, name) => ipcRenderer.invoke('pages:create', projectId, name),
   rename: (id, name) => ipcRenderer.invoke('pages:rename', id, name),
   setProject: (id, projectId) => ipcRenderer.invoke('pages:setProject', id, projectId),
@@ -14,7 +15,8 @@ const pages: PagesApi = {
   load: (id) => ipcRenderer.invoke('pages:load', id),
   save: (id, content) => ipcRenderer.invoke('pages:save', id, content),
   loadTranscript: (id) => ipcRenderer.invoke('pages:loadTranscript', id),
-  saveTranscript: (id, markdown) => ipcRenderer.invoke('pages:saveTranscript', id, markdown),
+  saveTranscript: (id, markdown, readAt) => ipcRenderer.invoke('pages:saveTranscript', id, markdown, readAt),
+  setPaper: (id, paper) => ipcRenderer.invoke('pages:setPaper', id, paper),
   getLastOpened: () => ipcRenderer.invoke('pages:getLastOpened'),
   setLastOpened: (id) => ipcRenderer.invoke('pages:setLastOpened', id),
 }

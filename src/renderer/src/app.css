@@ -47,8 +47,7 @@ button {
   color: #6b7280;
 }
 
-.primary,
-.transcript .read {
+.primary {
   font-weight: 600;
   padding: 6px 14px;
   border: none;
@@ -56,11 +55,6 @@ button {
   background: #4f46e5;
   color: #fff;
   cursor: pointer;
-}
-
-.transcript .read:disabled {
-  background: #a5b4fc;
-  cursor: default;
 }
 
 .secondary,
@@ -119,54 +113,21 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 8px 12px;
+  box-sizing: border-box;
+  height: 44px;
+  padding: 0 4px 0 12px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
   font-weight: 600;
 }
 
-.transcript .doc-title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.transcript > .muted {
-  margin: 0 12px 8px;
-}
-
-.transcript .filing {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0 12px 8px;
-  min-height: 28px;
-}
-
-.transcript .filing .picker {
-  flex: 1;
-}
-
-.transcript .project-name {
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.transcript .error {
+.transcript .paused {
   margin: 0 12px 8px;
   padding: 8px 10px;
   border-radius: 6px;
-  background: #fef2f2;
-  color: #b91c1c;
-}
-
-.transcript .error p {
-  margin: 0 0 8px;
-}
-
-.transcript .row {
-  display: flex;
-  gap: 8px;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 13px;
 }
 
 .transcript textarea {
@@ -194,15 +155,6 @@ button {
   margin-top: 12px;
 }
 
-
-.transcript footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 12px;
-  border-top: 1px solid #e5e7eb;
-}
 
 /* ---- project picker ----------------------------------------------------------- */
 
@@ -280,8 +232,14 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px 6px;
+  padding: 6px 6px 6px 12px;
   font-weight: 600;
+}
+
+.sidebar .header-end {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .view-select {
@@ -652,4 +610,225 @@ button {
 .doc-view .doc-body {
   font-size: 15px;
   line-height: 1.6;
+}
+
+/* ---- page bar, File menu, folded panels ----------------------------------------- */
+/* Flat: borders and fills, no shadows. Tap targets are at least 36px tall for a pen. */
+
+.page-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-main .canvas {
+  flex: 1;
+  min-height: 0;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 8px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.page-header .page-title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.page-header .page-folder {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex-shrink: 2;
+}
+
+.page-header .spacer {
+  flex: 1;
+}
+
+.read-status {
+  font-size: 12px;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.menu-button,
+.toggle,
+.icon-button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.menu-button.on,
+.toggle.on {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #3730a3;
+}
+
+.icon-button {
+  min-width: 36px;
+  padding: 0;
+  font-size: 16px;
+  line-height: 1;
+  color: #4b5563;
+}
+
+.sidebar .icon-button {
+  border: 1px solid transparent;
+  border-radius: 6px;
+}
+
+.icon-button:hover,
+.menu-button:hover,
+.toggle:hover {
+  background: #f3f4f6;
+}
+
+.menu {
+  position: relative;
+}
+
+.menu-panel {
+  position: absolute;
+  z-index: 500;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 280px;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+}
+
+.menu-panel > button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.menu-panel > button[role='menuitemradio'] {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.menu-panel > button:hover:not(:disabled),
+.menu-panel > button:active:not(:disabled) {
+  background: #eef2ff;
+}
+
+.menu-panel > button:disabled {
+  color: #9ca3af;
+  cursor: default;
+}
+
+.menu-panel .hint {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.menu-panel .check {
+  color: #4f46e5;
+  font-weight: 600;
+}
+
+.menu-panel hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 4px 0;
+}
+
+.menu-label {
+  padding: 4px 10px 2px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #9ca3af;
+}
+
+.menu-picker {
+  padding: 6px;
+}
+
+.notice {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f0fdf4;
+  color: #166534;
+  font-size: 13px;
+}
+
+.notice.error {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.notice > span {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* The folded sidebar. */
+.rail {
+  width: 48px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 4px;
+  border-right: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+/* Ruled lines and graph paper behind the ink (Paper.tsx). */
+.tl-background .paper {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.paper-lined line {
+  stroke: #bfd3ee;
+  stroke-width: 1;
+}
+
+.paper-graph path {
+  stroke: #dde3ec;
+  stroke-width: 1;
 }

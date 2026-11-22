@@ -4,8 +4,9 @@ import type { FilterList, ProjectList } from '../../shared/lifeline'
 import type { PageMeta } from '../../shared/pages'
 import { Banners } from './Banners'
 import { DocView, type Reading } from './DocView'
-import { PageView } from './PageView'
+import { lastPaper, PageView } from './PageView'
 import { type DocsState, Sidebar } from './Sidebar'
+import { useStoredState } from './storedFlag'
 
 const pagesApi = window.quill.pages
 const lifeline = window.quill.lifeline
@@ -66,6 +67,7 @@ export function App() {
   const [reading, setReading] = useState<Reading | null>(null)
   const [markdownFiles, setMarkdownFiles] = useState<MarkdownFile[]>([])
   const [fileError, setFileError] = useState<string | null>(null)
+  const [sidebar, setSidebar] = useStoredState<'open' | 'closed'>('quill.sidebar', 'open')
 
   useEffect(() => {
     filesApi.list().then(setMarkdownFiles)
@@ -152,7 +154,9 @@ export function App() {
   }, [])
 
   const createPage = useCallback(async () => {
-    const page = await pagesApi.create(folderId)
+    let page = await pagesApi.create(folderId)
+    const paper = lastPaper()
+    if (paper !== 'plain') page = await pagesApi.setPaper(page.id, paper)
     setPages((prev) => [...prev, page])
     setCurrentId(page.id)
     setReading(null)
@@ -246,28 +250,37 @@ export function App() {
   return (
     <div className="app" onDragOver={allowFileDrop} onDropCapture={dropMarkdown}>
       <Banners />
-      <Sidebar
-        configured={configured}
-        projects={projects}
-        projectsError={projectsError}
-        filters={filters}
-        pages={pages}
-        markdownFiles={markdownFiles}
-        folderId={folderId}
-        currentPageId={reading ? null : currentId}
-        reading={reading}
-        fileError={fileError}
-        docs={docs}
-        onSelectFolder={selectFolder}
-        onSelectPage={selectPage}
-        onCreatePage={createPage}
-        onRenamePage={renamePage}
-        onRemovePage={removePage}
-        onOpenDoc={(docId) => setReading({ kind: 'lifeline', docId })}
-        onOpenFile={(id) => setReading({ kind: 'file', id })}
-        onAddFile={addFile}
-        onRemoveFile={removeFile}
-      />
+      {sidebar === 'closed' ? (
+        <aside className="rail">
+          <button className="icon-button" onClick={() => setSidebar('open')} aria-label="Show folders" title="Show folders">
+            ☰
+          </button>
+        </aside>
+      ) : (
+        <Sidebar
+          onHide={() => setSidebar('closed')}
+          configured={configured}
+          projects={projects}
+          projectsError={projectsError}
+          filters={filters}
+          pages={pages}
+          markdownFiles={markdownFiles}
+          folderId={folderId}
+          currentPageId={reading ? null : currentId}
+          reading={reading}
+          fileError={fileError}
+          docs={docs}
+          onSelectFolder={selectFolder}
+          onSelectPage={selectPage}
+          onCreatePage={createPage}
+          onRenamePage={renamePage}
+          onRemovePage={removePage}
+          onOpenDoc={(docId) => setReading({ kind: 'lifeline', docId })}
+          onOpenFile={(id) => setReading({ kind: 'file', id })}
+          onAddFile={addFile}
+          onRemoveFile={removeFile}
+        />
+      )}
       {reading ? (
         // Docs and Markdown files open in the content window, read-only.
         <DocView reading={reading} closeLabel={page ? 'Back to page' : 'Close'} onClose={() => setReading(null)} />
@@ -280,6 +293,7 @@ export function App() {
           projects={projects?.projects ?? []}
           onMove={(projectId) => movePage(page.id, projectId)}
           onSaved={afterSave}
+          onChange={replacePage}
         />
       ) : (
         <div className="empty">
