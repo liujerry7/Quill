@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import path from 'node:path'
 import icon from '../../resources/icon.png?asset'
+import * as files from './files'
 import * as lifeline from './lifeline'
 import * as pages from './pageStore'
 import { readInk } from './read'
@@ -48,6 +49,8 @@ function registerHandlers() {
   ipcMain.handle('lifeline:savePage', (_e, pageId: string, opts?: { overwrite?: boolean }) =>
     lifeline.savePage(pageId, opts),
   )
+
+  ipcMain.handle('files:openMarkdown', (e) => files.openMarkdown(e.sender))
 
   ipcMain.handle('app:setup', () => setupStatus())
   ipcMain.handle('app:openEnv', async () => {

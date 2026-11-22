@@ -40,6 +40,8 @@ interface Props {
   onRenamePage(id: string, name: string): void
   onRemovePage(id: string): void
   onOpenDoc(id: string): void
+  /** Pick a Markdown file from disk to read. */
+  onOpenFile(): void
 }
 
 /** Quill's folders are Lifeline's projects. */
@@ -187,6 +189,12 @@ export function Sidebar(props: Props) {
           {folderId === null && <div style={{ paddingLeft: 20 }}>{contents}</div>}
         </li>
       </ul>
+
+      <footer>
+        <button className="open-file" onClick={props.onOpenFile} title="Or drop a .md file onto the window">
+          Open Markdown file…
+        </button>
+      </footer>
     </aside>
   )
 }

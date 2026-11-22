@@ -572,3 +572,38 @@ button {
   color: #4f46e5;
   text-decoration: underline;
 }
+
+/* A document read on its own (no page open) takes the whole window, at a readable width. */
+.app > .doc-view {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+}
+
+.app > .doc-view .doc-body {
+  font-size: 15px;
+  padding-left: max(16px, calc((100% - 760px) / 2));
+  padding-right: max(16px, calc((100% - 760px) / 2));
+}
+
+.doc-view .doc-detail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar > footer {
+  padding: 6px 8px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.sidebar .open-file {
+  width: 100%;
+  padding: 6px 8px;
+  text-align: left;
+  color: #4b5563;
+}
+
+.sidebar .open-file:hover {
+  background: #f3f4f6;
+}

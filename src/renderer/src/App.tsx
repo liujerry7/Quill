@@ -2,11 +2,14 @@ import { useCallback, useEffect, useState } from 'react'
 import type { FilterList, ProjectList } from '../../shared/lifeline'
 import type { PageMeta } from '../../shared/pages'
 import { Banners } from './Banners'
+import { DocView, type Reading } from './DocView'
 import { PageView } from './PageView'
 import { type DocsState, Sidebar } from './Sidebar'
 
 const pagesApi = window.quill.pages
 const lifeline = window.quill.lifeline
+
+const MARKDOWN = /.(md|markdown|mdown|txt)$/i
 
 /** How long launch waits for Lifeline's running clock before opening the last page instead. */
 const CONTEXT_WAIT_MS = 2500
@@ -54,7 +57,7 @@ export function App() {
   const [projectsError, setProjectsError] = useState<string | null>(null)
   const [filters, setFilters] = useState<FilterList | null>(null)
   const [docs, setDocs] = useState<DocsState>({ status: 'idle' })
-  const [openDocId, setOpenDocId] = useState<string | null>(null)
+  const [reading, setReading] = useState<Reading | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -120,7 +123,7 @@ export function App() {
   const selectFolder = useCallback(
     (id: string | null) => {
       setFolderId(id)
-      setOpenDocId(null)
+      setReading(null)
       // Stay on the current page if it lives here; otherwise open the folder's latest page.
       const inFolder = pages.filter((p) => p.projectId === id)
       if (!inFolder.some((p) => p.id === currentId)) {
@@ -133,14 +136,14 @@ export function App() {
 
   const selectPage = useCallback((id: string) => {
     setCurrentId(id)
-    setOpenDocId(null)
+    setReading(null)
   }, [])
 
   const createPage = useCallback(async () => {
     const page = await pagesApi.create(folderId)
     setPages((prev) => [...prev, page])
     setCurrentId(page.id)
-    setOpenDocId(null)
+    setReading(null)
   }, [folderId])
 
   const replacePage = useCallback((updated: PageMeta) => {
@@ -179,6 +182,28 @@ export function App() {
     loadDocs(folderId)
   }, [folderId, loadDocs])
 
+  const openFile = useCallback(async () => {
+    try {
+      const doc = await window.quill.files.openMarkdown()
+      if (doc) setReading({ kind: 'file', doc })
+    } catch (err) {
+      setReading({ kind: 'file', doc: { name: 'Couldn’t open that file', markdown: (err as Error).message, path: null, modifiedAt: null } })
+    }
+  }, [])
+
+  // Drop a Markdown file anywhere to read it. Other drops (images onto the canvas) pass through.
+  const allowFileDrop = (e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes('Files')) e.preventDefault()
+  }
+  const dropMarkdown = async (e: React.DragEvent) => {
+    const file = [...e.dataTransfer.files].find((f) => MARKDOWN.test(f.name))
+    if (!file) return
+    e.preventDefault()
+    e.stopPropagation() // keep tldraw from also dropping it onto the canvas
+    if (file.size > 5 * 1024 * 1024) return
+    setReading({ kind: 'file', doc: { name: file.name, markdown: await file.text(), path: null, modifiedAt: null } })
+  }
+
   if (!ready) return <div className="loading">Opening Quill…</div>
 
   const page = pages.find((p) => p.id === currentId) ?? null
@@ -186,7 +211,7 @@ export function App() {
     folderId === null ? 'Unfiled' : (projects?.projects.find((p) => p.id === folderId)?.name ?? 'this project')
 
   return (
-    <div className="app">
+    <div className="app" onDragOver={allowFileDrop} onDropCapture={dropMarkdown}>
       <Banners />
       <Sidebar
         configured={configured}
@@ -197,13 +222,14 @@ export function App() {
         folderId={folderId}
         currentPageId={currentId}
         docs={docs}
-        openDocId={openDocId}
+        openDocId={reading?.kind === 'lifeline' ? reading.docId : null}
         onSelectFolder={selectFolder}
         onSelectPage={selectPage}
         onCreatePage={createPage}
         onRenamePage={renamePage}
         onRemovePage={removePage}
-        onOpenDoc={setOpenDocId}
+        onOpenDoc={(docId) => setReading({ kind: 'lifeline', docId })}
+        onOpenFile={openFile}
       />
       {page ? (
         // Keyed by page so each page gets a fresh editor, store and transcript.
@@ -212,11 +238,14 @@ export function App() {
           page={page}
           configured={configured}
           projects={projects?.projects ?? []}
-          openDocId={openDocId}
-          onCloseDoc={() => setOpenDocId(null)}
+          reading={reading}
+          onCloseReading={() => setReading(null)}
           onMove={(projectId) => movePage(page.id, projectId)}
           onSaved={afterSave}
         />
+      ) : reading ? (
+        // No page open here: the document gets the whole window.
+        <DocView reading={reading} closeLabel="Close" onClose={() => setReading(null)} />
       ) : (
         <div className="empty">
           <p>No pages in {folderName} yet.</p>

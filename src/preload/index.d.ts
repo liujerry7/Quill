@@ -1,4 +1,5 @@
 import type { AppApi } from '../shared/app'
+import type { FilesApi } from '../shared/files'
 import type { LifelineApi } from '../shared/lifeline'
 import type { PagesApi } from '../shared/pages'
 import type { ReadApi } from '../shared/read'
@@ -10,6 +11,7 @@ declare global {
       pages: PagesApi
       ink: ReadApi
       lifeline: LifelineApi
+      files: FilesApi
       /** Register a save to finish before the window closes. Returns an unsubscribe. */
       onFlushRequest(fn: () => Promise<void>): () => void
     }

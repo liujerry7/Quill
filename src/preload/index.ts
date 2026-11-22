@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { AppApi } from '../shared/app'
+import type { FilesApi } from '../shared/files'
 import type { LifelineApi } from '../shared/lifeline'
 import type { PagesApi } from '../shared/pages'
 import type { ReadApi } from '../shared/read'
@@ -60,4 +61,8 @@ const appApi: AppApi = {
   installUpdate: () => ipcRenderer.invoke('app:installUpdate'),
 }
 
-contextBridge.exposeInMainWorld('quill', { app: appApi, pages, ink, lifeline, onFlushRequest })
+const files: FilesApi = {
+  openMarkdown: () => ipcRenderer.invoke('files:openMarkdown'),
+}
+
+contextBridge.exposeInMainWorld('quill', { app: appApi, pages, ink, lifeline, files, onFlushRequest })
