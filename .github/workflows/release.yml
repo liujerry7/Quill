@@ -37,7 +37,14 @@ jobs:
           # Optional: without it the canvas runs unlicensed. Add it under Settings > Secrets > Actions.
           RENDERER_VITE_TLDRAW_LICENSE_KEY: ${{ secrets.TLDRAW_LICENSE_KEY }}
 
-      - name: Package and publish
+      - name: Package and upload to a draft release
         run: npx electron-builder --win --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Only now, with the installer, blockmap and latest.yml all uploaded, can installed copies see it.
+      - name: Publish the release
+        shell: bash
+        run: gh release edit "v0.1.${{ github.run_number }}" --draft=false --latest --target "${{ github.sha }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

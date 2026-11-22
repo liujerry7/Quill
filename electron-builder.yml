@@ -28,4 +28,6 @@ publish:
   provider: github
   owner: liujerry7
   repo: Quill
-  releaseType: release
+  # Upload into a draft; CI publishes it once every file is there. (Publishing directly races:
+  # each parallel upload tries to create the release, and the loser fails with a 422.)
+  releaseType: draft
