@@ -407,8 +407,24 @@ button {
   white-space: nowrap;
 }
 
-.page-list .adders {
-  gap: 2px;
+.page-list .none {
+  padding: 4px 6px;
+}
+
+/* "+" on the open folder's row: a new page there. Sized for a pen tap. */
+.sidebar .add-page {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  margin-right: 2px;
+  border-radius: 6px;
+  font-size: 18px;
+  line-height: 1;
+  color: #4f46e5;
+}
+
+.sidebar .add-page:hover {
+  background: #e0e7ff;
 }
 
 /* "Page" / "MD" / "Lifeline" labels on folder items and the open document. */
@@ -445,11 +461,6 @@ button {
   border-radius: 50%;
   background: #22c55e;
   vertical-align: middle;
-}
-
-.page-list .new-page {
-  color: #4f46e5;
-  font-size: 13px;
 }
 
 .page-list input {

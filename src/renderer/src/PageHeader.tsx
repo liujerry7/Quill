@@ -26,6 +26,7 @@ interface Props {
   onDismissSave(): void
   onMove(projectId: string | null): void
   onPaper(paper: Paper): void
+  onNewPage(): void
 }
 
 /** The bar above the canvas: the File menu, the page's name, read status, the transcript toggle. */
@@ -68,8 +69,13 @@ export function PageHeader(props: Props) {
         </div>
       )}
       {save.kind === 'saved' && (
-        <div className="notice">
-          <span>{save.created ? `Saved as a new doc in ${projectName}.` : `Updated in ${projectName}.`}</span>
+        <div className={`notice${save.todos.error ? ' error' : ''}`}>
+          <span>
+            {save.created ? `Saved as a new doc in ${projectName}.` : `Updated in ${projectName}.`}
+            {save.todos.added.length > 0 &&
+              ` Added ${save.todos.added.length === 1 ? 'a to-do' : `${save.todos.added.length} to-dos`}: ${save.todos.added.join('; ')}.`}
+            {save.todos.error && ` Some to-dos weren't added: ${save.todos.error}`}
+          </span>
           <button className="secondary" onClick={props.onDismissSave}>OK</button>
         </div>
       )}
@@ -159,6 +165,11 @@ function FileMenu(props: Props & { projectName: string }) {
             </div>
           ) : (
             <>
+              <button role="menuitem" onClick={choose(props.onNewPage)}>
+                <span>New page</span>
+                <span className="hint">In {props.projectName}</span>
+              </button>
+              <hr />
               <button role="menuitem" disabled={!!whyNotSave || saving} onClick={choose(() => props.onSave())}>
                 <span>{saving ? 'Saving…' : page.lifeline ? 'Update in Lifeline' : 'Save to Lifeline'}</span>
                 <span className="hint">

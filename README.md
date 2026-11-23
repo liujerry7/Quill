@@ -45,10 +45,11 @@ Edit the transcript by hand and auto-read pauses for that page so it never overw
 corrections; **File ▸ Read page now** replaces it with a fresh read and resumes. Each read sends
 the page image to Claude, so it costs a little per pause. **File ▸ Paper** sets plain, lined or
 graph paper per page (new pages take the last one chosen); the lines aren't part of what Claude
-reads. Pen size **S** is a fine tip. The **«** at the top of the folders hides them to a rail.
+reads. Pen strokes are thinner than tldraw's at every size (S is a fine tip). New pages come from the
+**+** on the open folder's row or **File ▸ New page**. The **«** at the top of the folders hides
+them to a rail.
 
-Markdown files can sit in a folder beside pages (**+ Markdown file**, or drop `.md` files onto the
-window). They're labelled **MD** and open read-only in the content window, read fresh from disk
+Markdown files can sit in a folder beside pages (drop `.md` files onto the window). They're labelled **MD** and open read-only in the content window, read fresh from disk
 each time. Quill only remembers where they are (`%APPDATA%\quill\markdown.json`); removing one
 from Quill leaves the file alone.
 
@@ -67,7 +68,11 @@ the token needs read-and-write). Then:
 - **Context:** on launch Quill opens the project whose clock is running in Lifeline.
 - **Docs:** a folder lists its Lifeline docs; clicking one shows it read-only.
 - **File ▸ Save to Lifeline** makes a doc from the page's transcript in the page's project, and
-  later saves update that same doc. If the doc was edited in Lifeline since, Quill asks
+  later saves update that same doc. Ink colour carries meaning when Claude reads a page: black is notes and practice problems,
+  **green** is to-dos, and **red** is your own questions, ideas, guesses and thoughts (written as
+  quotes labelled Question, Idea, Guess or Thought). Green ink, or anything labelled **TODO** (`TODO: email the TA`, or a
+  `TODO` heading over a list) also becomes a to-do in that project. A to-do already added from
+  the page, or already in the project under the same name, isn't added again. If the doc was edited in Lifeline since, Quill asks
   before replacing it. (Lifeline has no uploads, so the ink stays local.)
 
 ## Testing

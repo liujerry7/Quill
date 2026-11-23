@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Editor } from 'tldraw'
+import type { TodoResult } from '../../shared/lifeline'
 import type { PageMeta } from '../../shared/pages'
 
 const pagesApi = window.quill.pages
@@ -17,7 +18,7 @@ export type ReadState =
 export type SaveState =
   | { kind: 'idle' }
   | { kind: 'saving' }
-  | { kind: 'saved'; created: boolean }
+  | { kind: 'saved'; created: boolean; todos: TodoResult }
   | { kind: 'conflict'; message: string }
   | { kind: 'error'; message: string }
 
@@ -180,7 +181,7 @@ export function usePageTranscript(page: PageMeta, editor: Editor | null, onSaved
       await flushRef.current() // Lifeline gets exactly what is on screen
       const result = await window.quill.lifeline.savePage(pageId, { overwrite })
       if (result.ok) {
-        setSave({ kind: 'saved', created: result.created })
+        setSave({ kind: 'saved', created: result.created, todos: result.todos })
         onSaved()
       } else if (result.conflict) {
         setSave({ kind: 'conflict', message: result.error })

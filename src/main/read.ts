@@ -9,6 +9,11 @@ const SYSTEM = `You transcribe handwritten notes from an image into clean Markdo
 - Write math as LaTeX: $...$ inline, $$...$$ on its own line for displayed equations.
 - Transcribe what is written, fixing only obvious spelling slips. Don't add content, summaries or commentary.
 - If a word is illegible, write your best guess followed by [?].
+- The ink's colour says what kind of writing it is:
+  - Black (or dark grey): notes and practice problems. Transcribe as above.
+  - Green: to-dos. Write each task as its own line "TODO: <the task>", even if the word TODO isn't written. Quill turns these lines into to-dos, so one task per line.
+  - Red: the writer's own questions, ideas, guesses and thoughts. Write each as a blockquote labelled with what it is, e.g. "> **Question:** why is the determinant multiplicative?" (labels: Question, Idea, Guess, Thought). Put it right after the note it sits beside.
+  - Anything labelled as a to-do (TODO, todo, To do, a boxed "TODO") is a to-do whatever its colour.
 - Ignore crossed-out text and stray marks. Describe a drawing or diagram in one italic line, e.g. *[diagram: arrow from A to B]*.
 - Reply with the Markdown only.`
 

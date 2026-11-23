@@ -47,8 +47,6 @@ interface Props {
   onRemovePage(id: string): void
   onOpenDoc(id: string): void
   onOpenFile(id: string): void
-  /** Pick a Markdown file from disk and add it to the open folder. */
-  onAddFile(): void
   onRemoveFile(id: string): void
   /** Collapse the sidebar to a thin rail. */
   onHide(): void
@@ -142,6 +140,7 @@ export function Sidebar(props: Props) {
               {node.children.length === 0 && <span className="count">empty</span>}
             </button>
           )}
+          {selected && <NewPageButton onClick={props.onCreatePage} />}
         </div>
         {selected && node.key === firstKey && <div style={{ paddingLeft: 20 + node.depth * 14 }}>{contents}</div>}
         {open && node.children.length > 0 && <ul>{node.children.map(renderNode)}</ul>}
@@ -201,11 +200,21 @@ export function Sidebar(props: Props) {
               <span className="label unfiled">Unfiled</span>
               {(pageCount.get(null) ?? 0) > 0 && <span className="count">{pageCount.get(null)}</span>}
             </button>
+            {folderId === null && <NewPageButton onClick={props.onCreatePage} />}
           </div>
           {folderId === null && <div style={{ paddingLeft: 20 }}>{contents}</div>}
         </li>
       </ul>
     </aside>
+  )
+}
+
+/** On the open folder's row: a new page in that folder. */
+function NewPageButton({ onClick }: { onClick(): void }) {
+  return (
+    <button className="add-page" onClick={onClick} aria-label="New page" title="New page in this folder">
+      +
+    </button>
   )
 }
 
@@ -222,11 +231,9 @@ function FolderContents(props: Props) {
         currentId={props.currentPageId}
         currentFileId={props.reading?.kind === 'file' ? props.reading.id : null}
         onSelect={props.onSelectPage}
-        onCreate={props.onCreatePage}
         onRename={props.onRenamePage}
         onRemove={props.onRemovePage}
         onSelectFile={props.onOpenFile}
-        onAddFile={props.onAddFile}
         onRemoveFile={props.onRemoveFile}
       />
       {props.fileError && <p className="muted small error-text">{props.fileError}</p>}

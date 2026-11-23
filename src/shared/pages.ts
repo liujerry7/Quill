@@ -31,6 +31,8 @@ export interface PageMeta {
    * false once it's been edited by hand. Missing (older pages): auto only if it's empty.
    */
   transcriptAuto?: boolean
+  /** To-dos (TODO lines) already added to Lifeline from this page, so a later save doesn't repeat them. */
+  todos?: string[]
 }
 
 /** The tldraw document snapshot, stored opaquely (main never looks inside). */

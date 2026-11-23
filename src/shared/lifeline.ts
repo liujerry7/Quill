@@ -58,8 +58,16 @@ export interface FilterList {
   error?: string
 }
 
+/** What a save did with the page's TODO lines. */
+export interface TodoResult {
+  /** New to-dos made in the page's project. */
+  added: string[]
+  /** Set when some couldn't be added (the doc itself was still saved). */
+  error?: string
+}
+
 export type SaveResult =
-  | { ok: true; docId: string; created: boolean }
+  | { ok: true; docId: string; created: boolean; todos: TodoResult }
   /** `conflict`: the doc changed in Lifeline since Quill last saved it; retry with overwrite to replace it. */
   | { ok: false; error: string; conflict?: boolean }
 

@@ -36,10 +36,11 @@ interface Props {
   onMove(projectId: string | null): void
   onSaved(): void
   onChange(page: PageMeta): void
+  onNewPage(): void
 }
 
 /** A page: its ink canvas, with its transcript beside it when asked for. */
-export function PageView({ page, configured, projects, onMove, onSaved, onChange }: Props) {
+export function PageView({ page, configured, projects, onMove, onSaved, onChange, onNewPage }: Props) {
   const [editor, setEditor] = useState<Editor | null>(null)
   const [transcript, setTranscript] = useStoredState<'open' | 'closed'>('quill.transcript', 'closed')
   const t = usePageTranscript(page, editor, onSaved)
@@ -69,6 +70,7 @@ export function PageView({ page, configured, projects, onMove, onSaved, onChange
           onDismissSave={t.dismissSave}
           onMove={onMove}
           onPaper={choosePaper}
+          onNewPage={onNewPage}
         />
         <main className="canvas">
           <PageCanvas pageId={page.id} paper={paper} onEditor={setEditor} />

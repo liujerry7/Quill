@@ -205,15 +205,6 @@ export function App() {
     setFileError(null)
   }, [])
 
-  const addFile = useCallback(async () => {
-    try {
-      const file = await filesApi.pick(folderId)
-      if (file) showAdded(file)
-    } catch (err) {
-      setFileError(cleanError(err))
-    }
-  }, [folderId, showAdded])
-
   const removeFile = useCallback(async (id: string) => {
     await filesApi.remove(id)
     setMarkdownFiles((prev) => prev.filter((f) => f.id !== id))
@@ -277,7 +268,6 @@ export function App() {
           onRemovePage={removePage}
           onOpenDoc={(docId) => setReading({ kind: 'lifeline', docId })}
           onOpenFile={(id) => setReading({ kind: 'file', id })}
-          onAddFile={addFile}
           onRemoveFile={removeFile}
         />
       )}
@@ -294,6 +284,7 @@ export function App() {
           onMove={(projectId) => movePage(page.id, projectId)}
           onSaved={afterSave}
           onChange={replacePage}
+          onNewPage={createPage}
         />
       ) : (
         <div className="empty">

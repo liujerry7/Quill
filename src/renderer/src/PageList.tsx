@@ -8,17 +8,15 @@ interface Props {
   currentId: string | null
   currentFileId: string | null
   onSelect(id: string): void
-  onCreate(): void
   onRename(id: string, name: string): void
   onRemove(id: string): void
   onSelectFile(id: string): void
-  onAddFile(): void
   onRemoveFile(id: string): void
 }
 
 /** What's inside one folder: Quill pages (ink) and Markdown files (read-only), each labelled. */
 export function PageList(props: Props) {
-  const { pages, files, currentId, currentFileId, onSelect, onCreate, onRename, onRemove } = props
+  const { pages, files, currentId, currentFileId, onSelect, onRename, onRemove } = props
   const [editingId, setEditingId] = useState<string | null>(null)
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
 
@@ -97,12 +95,7 @@ export function PageList(props: Props) {
           )}
         </li>
       ))}
-      <li className="adders">
-        <button className="new-page" onClick={onCreate}>+ New page</button>
-        <button className="new-page" onClick={props.onAddFile} title="Or drop .md files onto the window">
-          + Markdown file
-        </button>
-      </li>
+      {pages.length === 0 && files.length === 0 && <li className="none muted small">No pages yet</li>}
     </ul>
   )
 }

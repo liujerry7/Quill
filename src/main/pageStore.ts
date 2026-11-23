@@ -113,6 +113,16 @@ export function setPageLink(id: string, link: LifelineLink): Promise<PageMeta> {
   })
 }
 
+/** Remember to-dos added to Lifeline from this page (or found already there). */
+export function addPageTodos(id: string, names: string[]): Promise<PageMeta> {
+  checkId(id)
+  return editIndex((index) => {
+    const page = findPage(index, id)
+    page.todos = [...new Set([...(page.todos ?? []), ...names])]
+    return { ...page }
+  })
+}
+
 export function renamePage(id: string, name: string): Promise<PageMeta> {
   checkId(id)
   return editIndex((index) => {

@@ -7,12 +7,15 @@ const api = window.quill.pages
 const SAVE_DELAY_MS = 400
 const COMPONENTS: TLComponents = { PageMenu: null, Background: PaperBackground }
 
-// The pen's smallest size (S) is a fine tip: about half tldraw's usual S. M, L and XL are unchanged.
-const FINE_TIP = 0.25
+// Thinner pen strokes than tldraw's, for handwriting. tldraw draws a stroke at (strokeWidth + 1),
+// and a pressure-sensitive pen stroke at 1 + 1.2 × that, so lowering strokeWidth alone barely
+// thins a pen. These are the totals after tldraw's + 1 (S comes out under zero before it, which
+// is fine: only the total is used). With a pen at middling pressure that's about 2, 3, 4.5 and
+// 8.5 px on screen at 100%, against tldraw's 6, 8, 10.5 and 18.
+const PEN_WIDTHS = { s: 0.4, m: 1.2, l: 2, xl: 4.5 } as const
 const SHAPE_UTILS = [
   DrawShapeUtil.configure({
-    getCustomDisplayValues: (_editor, shape, theme) =>
-      shape.props.size === 's' ? { strokeWidth: theme.strokeWidth * FINE_TIP } : {},
+    getCustomDisplayValues: (_editor, shape) => ({ strokeWidth: PEN_WIDTHS[shape.props.size] - 1 }),
   }),
 ]
 

@@ -14,8 +14,11 @@ import type {
   ProjectList,
   Result,
   SaveResult,
+  TodoResult,
 } from '../shared/lifeline'
+import type { PageMeta } from '../shared/pages'
 import * as pages from './pageStore'
+import { findTodos, todoKey } from './todos'
 
 // Quill is an MCP client of Lifeline's own /mcp endpoint, with a personal access token
 // (Settings ▸ AI access). The token stays in this process; the renderer only sees results.
@@ -239,15 +242,54 @@ export async function savePage(pageId: string, opts: { overwrite?: boolean } = {
           ...(existing.project_ids.includes(page.projectId) ? {} : { project_id: page.projectId }),
         })
         await pages.setPageLink(pageId, { docId: existing.id, bodyHash: sha256(body), savedAt: new Date().toISOString() })
-        return { ok: true, docId: existing.id, created: false }
+        return { ok: true, docId: existing.id, created: false, todos: await addTodos(page, transcript) }
       }
     }
 
     const created = await call<{ doc_id: string }>('create_doc', { project_id: page.projectId, title: page.name, body })
     await pages.setPageLink(pageId, { docId: created.doc_id, bodyHash: sha256(body), savedAt: new Date().toISOString() })
-    return { ok: true, docId: created.doc_id, created: true }
+    return { ok: true, docId: created.doc_id, created: true, todos: await addTodos(page, transcript) }
   } catch (err) {
     const message = (err as Error).message
     return { ok: false, error: err instanceof ToolError ? message : `Couldn't reach Lifeline: ${message}` }
+  }
+}
+
+// ---- to-dos: TODO lines become to-dos in the page's project ---------------------------
+
+/**
+ * Each TODO on the page becomes a to-do (a project with no sub-projects) under the page's
+ * project. One already added from this page, or already in that project by the same name (even
+ * if finished), is left alone, so saving again never repeats one.
+ */
+async function addTodos(page: PageMeta, transcript: string): Promise<TodoResult> {
+  const projectId = page.projectId
+  if (!projectId) return { added: [] }
+  const done = new Set((page.todos ?? []).map(todoKey))
+  const wanted = findTodos(transcript).filter((t) => !done.has(todoKey(t)))
+  if (wanted.length === 0) return { added: [] }
+
+  const added: string[] = []
+  const known: string[] = []
+  try {
+    const projects = await call<RawProject[]>('list_projects')
+    const inProject = new Set(projects.filter((p) => p.parent_ids?.includes(projectId)).map((p) => todoKey(p.name)))
+    for (const name of wanted) {
+      if (!inProject.has(todoKey(name))) {
+        await call('create_project', {
+          name,
+          parent_ids: [projectId],
+          description: `From Quill page "${page.name}" (quill:${page.id})`,
+        })
+        added.push(name)
+      }
+      known.push(name)
+    }
+    return { added }
+  } catch (err) {
+    const message = (err as Error).message
+    return { added, error: err instanceof ToolError ? message : `Couldn't reach Lifeline: ${message}` }
+  } finally {
+    if (known.length > 0) await pages.addPageTodos(page.id, known)
   }
 }
