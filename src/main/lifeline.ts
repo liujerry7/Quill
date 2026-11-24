@@ -151,11 +151,17 @@ const toFolder = (f: RawFilterFolder): FilterFolder => ({
   itemIds: [...(f.projects ?? []).map((p) => p.id), ...(f.tasks ?? []).filter((t) => !t.via).map((t) => t.id)],
 })
 
+/** A filter: its folders, plus (newer Lifeline) projects and tasks filed at its top level. */
+interface RawFilter extends RawFilterFolder {
+  home?: boolean
+}
+
 export async function listFilters(): Promise<Result<FilterList>> {
   const result = await cached('filters', async () =>
-    (await call<{ id: string; name: string; folders?: RawFilterFolder[] }[]>('list_filters')).map(
-      (f): LifelineFilter => ({ id: f.id, name: f.name, folders: (f.folders ?? []).map(toFolder) }),
-    ),
+    (await call<RawFilter[]>('list_filters')).map((f): LifelineFilter => {
+      const top = toFolder(f)
+      return { id: f.id, name: f.name, folders: top.folders, itemIds: top.itemIds }
+    }),
   )
   if (!result.ok) return result
   const { value, ...rest } = result.value

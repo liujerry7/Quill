@@ -1,11 +1,18 @@
 import { useEffect, useState } from 'react'
 import { DrawShapeUtil, Editor, getSnapshot, type TLComponents, Tldraw, TLStoreSnapshot } from 'tldraw'
 import type { Paper } from '../../shared/pages'
+import { BRUSH_ERASER_OVERRIDES, BrushEraserTool, BrushOutline, QuillToolbar } from './BrushEraser'
 import { PaperBackground, PaperContext } from './Paper'
 
 const api = window.quill.pages
 const SAVE_DELAY_MS = 400
-const COMPONENTS: TLComponents = { PageMenu: null, Background: PaperBackground }
+const COMPONENTS: TLComponents = {
+  PageMenu: null,
+  Background: PaperBackground,
+  Toolbar: QuillToolbar,
+  InFrontOfTheCanvas: BrushOutline,
+}
+const TOOLS = [BrushEraserTool]
 
 // Thinner pen strokes than tldraw's, for handwriting. tldraw draws a stroke at (strokeWidth + 1),
 // and a pressure-sensitive pen stroke at 1 + 1.2 × that, so lowering strokeWidth alone barely
@@ -83,6 +90,8 @@ export function PageCanvas({ pageId, paper, onEditor }: Props) {
         onMount={setEditor}
         components={COMPONENTS}
         shapeUtils={SHAPE_UTILS}
+        tools={TOOLS}
+        overrides={BRUSH_ERASER_OVERRIDES}
         licenseKey={import.meta.env.RENDERER_VITE_TLDRAW_LICENSE_KEY}
       />
     </PaperContext.Provider>

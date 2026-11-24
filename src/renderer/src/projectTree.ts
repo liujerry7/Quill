@@ -11,11 +11,12 @@ export interface TreeNode {
 }
 
 const byName = (a: LifelineProject, b: LifelineProject) => a.name.localeCompare(b.name)
-const isActive = (p: LifelineProject) => p.status === 'in_progress' || p.status === 'next'
+/** Every project still open (in progress, up next or backlog) shows, so a page can go anywhere. */
+const isOpen = (p: LifelineProject) => p.status !== 'finished'
 
 /**
- * "By goal", Lifeline's own project tree: active projects (in progress or up next), any project
- * holding Quill pages, the open folder, plus their ancestors so each sits where it does in Lifeline.
+ * "By goal", Lifeline's own project tree: every unfinished project, any project holding Quill
+ * pages, the open folder, plus their ancestors so each sits where it does in Lifeline.
  */
 export function buildTree(
   projects: LifelineProject[],
@@ -32,7 +33,7 @@ export function buildTree(
     for (const parent of p.parentIds) include(parent, seen)
   }
   for (const p of projects) {
-    if (isActive(p) || withPages.has(p.id)) include(p.id)
+    if (isOpen(p) || withPages.has(p.id)) include(p.id)
   }
   if (openFolder) include(openFolder)
 
@@ -58,9 +59,9 @@ export function buildTree(
 }
 
 /**
- * One of the user's Lifeline filters: its folders as groups, the projects and tasks filed in each,
- * and under each project its sub-projects that are active, hold Quill pages or are open. Projects
- * with Quill pages that the filter doesn't place go in a last group, so no page is out of reach.
+ * One of the user's Lifeline filters: the projects and tasks filed in it (at its top level or in its
+ * folders, shown as groups), and under each project its unfinished sub-projects. Everything the
+ * filter doesn't place goes in a last group, so every project is reachable from every filter.
  */
 export function buildFilterTree(
   projects: LifelineProject[],
@@ -72,7 +73,7 @@ export function buildFilterTree(
   const children = new Map<string, LifelineProject[]>()
   for (const p of projects) for (const parent of p.parentIds) children.set(parent, [...(children.get(parent) ?? []), p])
 
-  const wanted = (p: LifelineProject) => isActive(p) || withPages.has(p.id) || p.id === openFolder
+  const wanted = (p: LifelineProject) => isOpen(p) || withPages.has(p.id) || p.id === openFolder
   // Whether a project, or anything below it, is worth showing.
   const memo = new Map<string, boolean>()
   const worthShowing = (p: LifelineProject): boolean => {
@@ -95,25 +96,30 @@ export function buildFilterTree(
       children: [...kids].sort(byName).map((c) => grow(c, depth + 1, [...path, p.id])),
     }
   }
+  // The user filed these by hand, so show all of them except finished ones nothing points to.
+  const filed = (ids: string[]) =>
+    ids.map((id) => byId.get(id)).filter((p): p is LifelineProject => !!p && worthShowing(p)).sort(byName)
   const folder = (f: FilterFolder, depth: number, path: string[]): TreeNode => {
     const here = [...path, f.id]
-    // The user filed these by hand, so show all of them except finished ones nothing points to.
-    const items = f.itemIds
-      .map((id) => byId.get(id))
-      .filter((p): p is LifelineProject => !!p && (p.status !== 'finished' || worthShowing(p)))
+    const items = filed(f.itemIds)
     return {
       group: { id: f.id, name: f.name },
       key: here.join('/'),
       depth,
       children: [
         ...f.folders.map((sub) => folder(sub, depth + 1, here)),
-        ...items.sort(byName).map((p) => grow(p, depth + 1, here)),
+        ...items.map((p) => grow(p, depth + 1, here)),
       ],
     }
   }
 
-  const nodes = filter.folders.map((f) => folder(f, 0, []))
-  const elsewhere = projects.filter((p) => (withPages.has(p.id) || p.id === openFolder) && !placed.has(p.id))
+  const nodes = [
+    ...filter.folders.map((f) => folder(f, 0, [])),
+    ...filed(filter.itemIds ?? []).map((p) => grow(p, 0, [])),
+  ]
+  // What's left, each at its topmost unplaced project (its sub-projects come along under it).
+  const left = new Set(projects.filter((p) => !placed.has(p.id) && worthShowing(p)).map((p) => p.id))
+  const elsewhere = projects.filter((p) => left.has(p.id) && !p.parentIds.some((id) => left.has(id)))
   if (elsewhere.length > 0) {
     const key = `elsewhere:${filter.id}`
     nodes.push({

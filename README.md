@@ -45,9 +45,11 @@ Edit the transcript by hand and auto-read pauses for that page so it never overw
 corrections; **File ▸ Read page now** replaces it with a fresh read and resumes. Each read sends
 the page image to Claude, so it costs a little per pause. **File ▸ Paper** sets plain, lined or
 graph paper per page (new pages take the last one chosen); the lines aren't part of what Claude
-reads. Pen strokes are thinner than tldraw's at every size (S is a fine tip). New pages come from the
-**+** on the open folder's row or **File ▸ New page**. The **«** at the top of the folders hides
-them to a rail.
+reads. Pen strokes are thinner than tldraw's at every size (S is a fine tip). The **brush eraser**
+(first in the toolbar, Shift+E) rubs out only the ink under its circle, cutting a stroke in two
+where it passes through; tldraw's own eraser (E) still deletes whole strokes. New pages come from the
+**+** on any project's row or **File ▸ New page**; **✎** renames a page and **×** deletes it (into
+Quill's trash folder). The **«** at the top of the sidebar hides it to a rail.
 
 Markdown files can sit in a folder beside pages (drop `.md` files onto the window). They're labelled **MD** and open read-only in the content window, read fresh from disk
 each time. Quill only remembers where they are (`%APPDATA%\quill\markdown.json`); removing one
@@ -59,14 +61,15 @@ Quill is an MCP client of Lifeline's own `/mcp` endpoint (no Lifeline changes). 
 `LIFELINE_URL` and `LIFELINE_TOKEN` in Quill's `.env` (Settings ▸ AI access in Lifeline gives both;
 the token needs read-and-write). Then:
 
-- **Folders are Lifeline projects.** The menu at the top of the sidebar picks how they're
-  arranged: **By goal** is Lifeline's project tree (in-progress and up-next projects, and any
-  project holding Quill pages), and each of your Lifeline filters ("By product", "By role"…)
-  shows its folders with the projects filed in them. Projects with Quill pages that a filter
-  doesn't place appear under "Not in …". Search finds any project. Pages from before this are
-  in **Unfiled**. Projects and filters are cached, so folders still show offline.
+- **The sidebar is Lifeline's projects.** Each opens (tap the row) to the Quill pages in it and
+  its sub-projects, with a **+** on the right for a new page there. The menu at the top picks
+  the arrangement: **None** is one list of every page with **+ New page** at the top; **By goal**
+  is Lifeline's project tree; each of your Lifeline filters ("By product", "By activity"…) shows
+  the projects filed in it, with whatever it doesn't place under "Not in …". Every unfinished
+  project shows, so a page can go anywhere. Search finds any project. Quill only reads projects;
+  it never renames, moves or deletes one. Projects and filters are cached, so they still show
+  offline.
 - **Context:** on launch Quill opens the project whose clock is running in Lifeline.
-- **Docs:** a folder lists its Lifeline docs; clicking one shows it read-only.
 - **File ▸ Save to Lifeline** makes a doc from the page's transcript in the page's project, and
   later saves update that same doc. Ink colour carries meaning when Claude reads a page: black is notes and practice problems,
   **green** is to-dos, and **red** is your own questions, ideas, guesses and thoughts (written as

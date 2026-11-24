@@ -7,6 +7,8 @@ interface Props {
   files: MarkdownFile[]
   currentId: string | null
   currentFileId: string | null
+  /** In the list of every page: names each page's project under it. */
+  folderName?(projectId: string | null): string
   onSelect(id: string): void
   onRename(id: string, name: string): void
   onRemove(id: string): void
@@ -14,7 +16,7 @@ interface Props {
   onRemoveFile(id: string): void
 }
 
-/** What's inside one folder: Quill pages (ink) and Markdown files (read-only), each labelled. */
+/** Pages (ink) and Markdown files (read-only), each labelled; pages can be renamed and deleted. */
 export function PageList(props: Props) {
   const { pages, files, currentId, currentFileId, onSelect, onRename, onRemove } = props
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -45,7 +47,10 @@ export function PageList(props: Props) {
               title={page.lifeline ? 'Saved to Lifeline. Double-click to rename' : 'Double-click to rename'}
             >
               <span className="kind page">Page</span>
-              <span className="label">{page.name}</span>
+              <span className="text">
+                <span className="label">{page.name}</span>
+                {props.folderName && <span className="where">{props.folderName(page.projectId)}</span>}
+              </span>
               {page.lifeline && <span className="saved-dot" aria-label="saved to Lifeline" />}
             </button>
           )}
@@ -73,7 +78,10 @@ export function PageList(props: Props) {
         <li key={file.id} className={file.id === currentFileId ? 'current' : ''}>
           <button className="name" onClick={() => props.onSelectFile(file.id)} title={file.path}>
             <span className="kind file">MD</span>
-            <span className="label">{file.name}</span>
+            <span className="text">
+              <span className="label">{file.name}</span>
+              {props.folderName && <span className="where">{props.folderName(file.projectId)}</span>}
+            </span>
           </button>
           {confirmingId === file.id ? (
             <span className="confirm">

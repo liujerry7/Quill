@@ -49,6 +49,8 @@ export interface LifelineFilter {
   id: string
   name: string
   folders: FilterFolder[]
+  /** Projects and tasks filed in the filter itself, outside any folder. Missing in older caches. */
+  itemIds?: string[]
 }
 
 export interface FilterList {

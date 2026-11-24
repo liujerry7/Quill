@@ -321,10 +321,9 @@ button {
   background: #eef2ff;
 }
 
-.folder .chevron {
-  width: 18px;
+.folder-name .chevron {
+  width: 14px;
   flex-shrink: 0;
-  padding: 4px 0;
   color: #9ca3af;
   font-size: 11px;
   text-align: center;
@@ -336,7 +335,8 @@ button {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 6px;
+  min-height: 32px;
+  padding: 4px 4px;
   text-align: left;
 }
 
@@ -368,10 +368,43 @@ button {
   flex-shrink: 0;
 }
 
-.folder-contents {
-  padding: 2px 0 6px;
-  border-left: 2px solid #e0e7ff;
-  margin-bottom: 4px;
+.folder-open > div {
+  padding-bottom: 2px;
+}
+
+/* The project or page's place under a page's name in the list of every page. */
+.page-list .name .text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.page-list .name .where {
+  font-size: 11px;
+  color: #9ca3af;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar .new-page-top {
+  display: block;
+  width: calc(100% - 8px);
+  margin: 2px 4px 8px;
+  padding: 8px;
+  border: 1px dashed #c7d2fe;
+  border-radius: 6px;
+  color: #4f46e5;
+  font-weight: 600;
+  text-align: center;
+}
+
+.sidebar .new-page-top:hover {
+  background: #eef2ff;
+}
+
+.sidebar div.tree {
+  padding: 0 8px 12px;
 }
 
 .page-list li {
@@ -411,7 +444,7 @@ button {
   padding: 4px 6px;
 }
 
-/* "+" on the open folder's row: a new page there. Sized for a pen tap. */
+/* "+" on every project's row: a new page there. Sized for a pen tap; faint until wanted. */
 .sidebar .add-page {
   flex-shrink: 0;
   width: 30px;
@@ -420,6 +453,11 @@ button {
   border-radius: 6px;
   font-size: 18px;
   line-height: 1;
+  color: #a5b4fc;
+}
+
+.folder:hover .add-page,
+.folder.selected .add-page {
   color: #4f46e5;
 }
 
@@ -489,52 +527,6 @@ button {
 
 .page-list .confirm button:first-child {
   color: #b91c1c;
-}
-
-.docs {
-  margin-top: 6px;
-}
-
-.docs-heading {
-  padding: 2px 6px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #9ca3af;
-}
-
-.docs p {
-  margin: 2px 6px;
-}
-
-.docs .doc {
-  display: flex;
-  width: 100%;
-  gap: 6px;
-  padding: 4px 6px;
-  text-align: left;
-  font-size: 13px;
-  color: #374151;
-}
-
-.docs .doc:hover {
-  background: #f3f4f6;
-}
-
-.docs .doc.current {
-  background: #e0e7ff;
-}
-
-.docs .doc .label {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.docs .from-quill {
-  color: #6366f1;
 }
 
 /* Floating notes along the top: update ready, keys missing. */
@@ -842,4 +834,20 @@ button {
 .paper-graph path {
   stroke: #dde3ec;
   stroke-width: 1;
+}
+
+/* The brush eraser's outline under the pen. */
+.brush-outline {
+  position: absolute;
+  border: 1.5px solid rgba(79, 70, 229, 0.85);
+  border-radius: 50%;
+  background: rgba(79, 70, 229, 0.08);
+  pointer-events: none;
+  z-index: 1000;
+}
+.brush-eraser-icon {
+  display: grid;
+  place-items: center;
+  mask: none;
+  background: none;
 }

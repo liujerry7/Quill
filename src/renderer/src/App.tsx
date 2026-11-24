@@ -5,7 +5,7 @@ import type { PageMeta } from '../../shared/pages'
 import { Banners } from './Banners'
 import { DocView, type Reading } from './DocView'
 import { lastPaper, PageView } from './PageView'
-import { type DocsState, Sidebar } from './Sidebar'
+import { Sidebar } from './Sidebar'
 import { useStoredState } from './storedFlag'
 
 const pagesApi = window.quill.pages
@@ -63,7 +63,6 @@ export function App() {
   const [projects, setProjects] = useState<ProjectList | null>(null)
   const [projectsError, setProjectsError] = useState<string | null>(null)
   const [filters, setFilters] = useState<FilterList | null>(null)
-  const [docs, setDocs] = useState<DocsState>({ status: 'idle' })
   const [reading, setReading] = useState<Reading | null>(null)
   const [markdownFiles, setMarkdownFiles] = useState<MarkdownFile[]>([])
   const [fileError, setFileError] = useState<string | null>(null)
@@ -110,57 +109,30 @@ export function App() {
     }
   }, [configured])
 
-  const loadDocs = useCallback(
-    (projectId: string | null) => {
-      if (!configured || !projectId) {
-        setDocs({ status: 'idle' })
-        return () => {}
-      }
-      let cancelled = false
-      setDocs({ status: 'loading' })
-      lifeline.listDocs(projectId).then((result) => {
-        if (cancelled) return
-        setDocs(result.ok ? { status: 'ok', docs: result.value } : { status: 'error', error: result.error })
-      })
-      return () => {
-        cancelled = true
-      }
-    },
-    [configured],
-  )
-  useEffect(() => loadDocs(folderId), [folderId, loadDocs])
-
   useEffect(() => {
     if (currentId) pagesApi.setLastOpened(currentId)
   }, [currentId])
 
-  const selectFolder = useCallback(
-    (id: string | null) => {
-      setFolderId(id)
+  // The current project follows the open page; picking one from search just opens it in the list.
+  const selectPage = useCallback(
+    (id: string) => {
+      setCurrentId(id)
       setReading(null)
-      // Stay on the current page if it lives here; otherwise open the folder's latest page.
-      const inFolder = pages.filter((p) => p.projectId === id)
-      if (!inFolder.some((p) => p.id === currentId)) {
-        const latest = [...inFolder].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0]
-        setCurrentId(latest?.id ?? null)
-      }
+      const page = pages.find((p) => p.id === id)
+      if (page) setFolderId(page.projectId)
     },
-    [pages, currentId],
+    [pages],
   )
 
-  const selectPage = useCallback((id: string) => {
-    setCurrentId(id)
-    setReading(null)
-  }, [])
-
-  const createPage = useCallback(async () => {
-    let page = await pagesApi.create(folderId)
+  const createPage = useCallback(async (projectId: string | null) => {
+    let page = await pagesApi.create(projectId)
     const paper = lastPaper()
     if (paper !== 'plain') page = await pagesApi.setPaper(page.id, paper)
     setPages((prev) => [...prev, page])
+    setFolderId(projectId)
     setCurrentId(page.id)
     setReading(null)
-  }, [folderId])
+  }, [])
 
   const replacePage = useCallback((updated: PageMeta) => {
     setPages((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
@@ -192,11 +164,10 @@ export function App() {
     [pages, currentId, folderId],
   )
 
-  // After a save the page carries its doc link, and the folder's doc list may have a new doc.
+  // After a save the page carries its doc link.
   const afterSave = useCallback(async () => {
     setPages(await pagesApi.list())
-    loadDocs(folderId)
-  }, [folderId, loadDocs])
+  }, [])
 
   // A Markdown file joins the open folder and opens in the content window.
   const showAdded = useCallback((file: MarkdownFile) => {
@@ -260,13 +231,11 @@ export function App() {
           currentPageId={reading ? null : currentId}
           reading={reading}
           fileError={fileError}
-          docs={docs}
-          onSelectFolder={selectFolder}
+          onSelectFolder={setFolderId}
           onSelectPage={selectPage}
           onCreatePage={createPage}
           onRenamePage={renamePage}
           onRemovePage={removePage}
-          onOpenDoc={(docId) => setReading({ kind: 'lifeline', docId })}
           onOpenFile={(id) => setReading({ kind: 'file', id })}
           onRemoveFile={removeFile}
         />
@@ -284,12 +253,12 @@ export function App() {
           onMove={(projectId) => movePage(page.id, projectId)}
           onSaved={afterSave}
           onChange={replacePage}
-          onNewPage={createPage}
+          onNewPage={() => createPage(page.projectId)}
         />
       ) : (
         <div className="empty">
-          <p>No pages in {folderName} yet.</p>
-          <button className="primary" onClick={createPage}>+ New page</button>
+          <p>No page open.</p>
+          <button className="primary" onClick={() => createPage(folderId)}>+ New page in {folderName}</button>
         </div>
       )}
     </div>
