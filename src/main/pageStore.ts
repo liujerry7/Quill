@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import type { LifelineLink, PageContent, PageMeta, Paper } from '../shared/pages'
+import { type CheckResult, sameArea } from '../shared/read'
 
 // Layout under the app's user-data folder:
 //   pages/index.json      { pages: PageMeta[], lastOpened: string | null }
@@ -19,6 +20,7 @@ const dir = () => path.join(app.getPath('userData'), 'pages')
 const indexFile = () => path.join(dir(), 'index.json')
 const pageFile = (id: string) => path.join(dir(), `${id}.json`)
 const transcriptFile = (id: string) => path.join(dir(), `${id}.md`)
+const feedbackFile = (id: string) => path.join(dir(), `${id}.check.json`)
 
 const ID_PATTERN = /^[0-9a-f-]{36}$/
 function checkId(id: string) {
@@ -141,7 +143,7 @@ export function removePage(id: string): Promise<void> {
     if (index.lastOpened === id) index.lastOpened = null
     const trash = path.join(dir(), 'trash')
     await fs.mkdir(trash, { recursive: true })
-    for (const file of [pageFile(id), transcriptFile(id)]) {
+    for (const file of [pageFile(id), transcriptFile(id), feedbackFile(id)]) {
       await fs.rename(file, path.join(trash, path.basename(file))).catch((err) => {
         // A page never drawn on (or never read) has no file of that kind; nothing to keep.
         if (err.code !== 'ENOENT') throw err
@@ -177,6 +179,35 @@ export async function loadTranscript(id: string): Promise<string> {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') return ''
     throw err
   }
+}
+
+export async function loadChecks(id: string): Promise<CheckResult[]> {
+  checkId(id)
+  try {
+    const saved = JSON.parse(await fs.readFile(feedbackFile(id), 'utf8')) as { checks?: CheckResult[] }
+    return Array.isArray(saved.checks) ? saved.checks : []
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return []
+    throw err
+  }
+}
+
+async function saveChecks(id: string, checks: CheckResult[]): Promise<void> {
+  await editIndex(async (index) => {
+    findPage(index, id)
+    await writeAtomic(feedbackFile(id), JSON.stringify({ checks }))
+  })
+}
+
+/** A new check goes first, replacing any earlier one of the same area. */
+export async function addCheck(id: string, check: CheckResult): Promise<void> {
+  const checks = await loadChecks(id)
+  await saveChecks(id, [check, ...checks.filter((c) => !sameArea(c.region, check.region))])
+}
+
+export async function removeCheck(id: string, checkIdToRemove: string): Promise<void> {
+  const checks = await loadChecks(id)
+  await saveChecks(id, checks.filter((c) => c.id !== checkIdToRemove))
 }
 
 export async function saveTranscript(id: string, markdown: string, readAt?: string): Promise<void> {

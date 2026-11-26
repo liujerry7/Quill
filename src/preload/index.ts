@@ -15,6 +15,8 @@ const pages: PagesApi = {
   load: (id) => ipcRenderer.invoke('pages:load', id),
   save: (id, content) => ipcRenderer.invoke('pages:save', id, content),
   loadTranscript: (id) => ipcRenderer.invoke('pages:loadTranscript', id),
+  loadChecks: (id) => ipcRenderer.invoke('pages:loadChecks', id),
+  removeCheck: (id, checkId) => ipcRenderer.invoke('pages:removeCheck', id, checkId),
   saveTranscript: (id, markdown, readAt) => ipcRenderer.invoke('pages:saveTranscript', id, markdown, readAt),
   setPaper: (id, paper) => ipcRenderer.invoke('pages:setPaper', id, paper),
   getLastOpened: () => ipcRenderer.invoke('pages:getLastOpened'),
@@ -36,6 +38,8 @@ function onFlushRequest(fn: () => Promise<void>) {
 
 const ink: ReadApi = {
   read: (pngBase64) => ipcRenderer.invoke('ink:read', pngBase64),
+  check: (pageId, pngBase64, transcript, size, region) =>
+    ipcRenderer.invoke('ink:check', pageId, pngBase64, transcript, size, region),
 }
 
 const lifeline: LifelineApi = {

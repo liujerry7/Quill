@@ -21,6 +21,10 @@ interface Props {
   save: SaveState
   transcriptOpen: boolean
   onToggleTranscript(): void
+  feedbackOpen: boolean
+  /** A check from the Check work tool is under way. */
+  checking: boolean
+  onToggleFeedback(): void
   onReadNow(): void
   onSave(overwrite?: boolean): void
   onDismissSave(): void
@@ -46,6 +50,14 @@ export function PageHeader(props: Props) {
         <span className={`read-status${read.kind === 'error' ? ' error-text' : ''}`} title={read.kind === 'error' ? read.message : undefined}>
           {readLabel(read, props.auto)}
         </span>
+        <button
+          className={`toggle${props.feedbackOpen ? ' on' : ''}`}
+          onClick={props.onToggleFeedback}
+          aria-pressed={props.feedbackOpen}
+          title="Claude's checks of your work (box a problem with the Check work tool)"
+        >
+          {props.checking ? 'Checking…' : 'Feedback'}
+        </button>
         <button
           className={`toggle${props.transcriptOpen ? ' on' : ''}`}
           onClick={props.onToggleTranscript}

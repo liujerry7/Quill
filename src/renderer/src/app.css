@@ -851,3 +851,99 @@ button {
   mask: none;
   background: none;
 }
+
+/* The page's scroll bars, over the canvas's left and bottom edges. Wide enough for a pen. */
+.page-scroll {
+  position: absolute;
+  z-index: 300;
+  pointer-events: auto;
+  touch-action: none;
+}
+/* On the left: tldraw's style panel covers the right edge, and a right hand covers it too. */
+.page-scroll-y {
+  left: 2px;
+  top: 52px;
+  bottom: 56px;
+  width: 12px;
+}
+.page-scroll-x {
+  left: 120px;
+  right: 20px;
+  bottom: 62px;
+  height: 12px;
+}
+.page-scroll-thumb {
+  position: absolute;
+  border-radius: 6px;
+  background: rgba(100, 116, 139, 0.35);
+  touch-action: none;
+}
+.page-scroll-y .page-scroll-thumb {
+  left: 2px;
+  right: 2px;
+}
+.page-scroll-x .page-scroll-thumb {
+  top: 2px;
+  bottom: 2px;
+}
+.page-scroll:hover .page-scroll-thumb,
+.page-scroll-thumb:active {
+  background: rgba(79, 70, 229, 0.55);
+}
+
+/* The feedback panel: Claude's check of the page's work. */
+.feedback .header-end {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.feedback .feedback-body {
+  border-top: none;
+  margin-top: 0;
+}
+.feedback .feedback-body h2 {
+  font-size: 16px;
+  margin: 16px 0 6px;
+}
+.feedback .feedback-body h3 {
+  font-size: 14px;
+  margin: 14px 0 4px;
+  color: #374151;
+}
+.feedback .paused.error-text {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.feedback .feedback-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 16px 16px;
+  line-height: 1.55;
+}
+.feedback .check {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 6px;
+  margin-top: 10px;
+}
+.feedback .check:first-of-type {
+  border-top: none;
+  margin-top: 0;
+}
+.feedback .check-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.feedback .how {
+  font-size: 13px;
+}
+.feedback .paused {
+  margin: 0 0 8px;
+}
+.quill-tool-icon {
+  display: grid;
+  place-items: center;
+  mask: none;
+  background: none;
+}

@@ -1,10 +1,12 @@
+import { randomUUID } from 'node:crypto'
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import path from 'node:path'
 import icon from '../../resources/icon.png?asset'
 import * as files from './files'
 import * as lifeline from './lifeline'
 import * as pages from './pageStore'
-import { readInk } from './read'
+import { checkWork, readInk } from './read'
+import type { CheckReply, CheckResult, PageRegion } from '../shared/read'
 import { ensureEnvFile, loadEnv, setupStatus } from './setup'
 import { checkForUpdates, installUpdate, updateReady } from './updates'
 import type { Paper } from '../shared/pages'
@@ -37,6 +39,8 @@ function registerHandlers() {
   ipcMain.handle('pages:load', (_e, id: string) => pages.loadPage(id))
   ipcMain.handle('pages:save', (_e, id: string, content: unknown) => pages.savePage(id, content))
   ipcMain.handle('pages:loadTranscript', (_e, id: string) => pages.loadTranscript(id))
+  ipcMain.handle('pages:loadChecks', (_e, id: string) => pages.loadChecks(id))
+  ipcMain.handle('pages:removeCheck', (_e, id: string, checkId: string) => pages.removeCheck(id, checkId))
   ipcMain.handle('pages:saveTranscript', (_e, id: string, md: string, readAt?: string) =>
     pages.saveTranscript(id, md, typeof readAt === 'string' ? readAt : undefined),
   )
@@ -44,6 +48,31 @@ function registerHandlers() {
   ipcMain.handle('pages:getLastOpened', () => pages.getLastOpened())
   ipcMain.handle('pages:setLastOpened', (_e, id: string) => pages.setLastOpened(id))
   ipcMain.handle('ink:read', (_e, pngBase64: string) => readInk(pngBase64))
+  ipcMain.handle(
+    'ink:check',
+    async (_e, pageId: string, pngBase64: string, transcript: unknown, size: unknown, region: unknown): Promise<CheckReply> => {
+      const { width, height } = (size ?? {}) as { width?: unknown; height?: unknown }
+      const r = (region ?? {}) as Partial<Record<keyof PageRegion, unknown>>
+      const nums = [width, height, r.x, r.y, r.w, r.h]
+      if (nums.some((n) => typeof n !== 'number' || !Number.isFinite(n)) || (width as number) <= 0 || (height as number) <= 0) {
+        return { ok: false, error: "Quill sent the area to check without its size." }
+      }
+      const result = await checkWork(pngBase64, typeof transcript === 'string' ? transcript : '', {
+        width: width as number,
+        height: height as number,
+      })
+      if (!result.ok) return result
+      const check: CheckResult = {
+        id: randomUUID(),
+        region: { x: r.x as number, y: r.y as number, w: r.w as number, h: r.h as number },
+        markdown: result.markdown,
+        marks: result.marks,
+        checkedAt: new Date().toISOString(),
+      }
+      await pages.addCheck(pageId, check)
+      return { ok: true, check }
+    },
+  )
 
   ipcMain.handle('lifeline:isConfigured', () => lifeline.isConfigured())
   ipcMain.handle('lifeline:listProjects', () => lifeline.listProjects())

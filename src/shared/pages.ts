@@ -1,3 +1,5 @@
+import type { CheckResult } from './read'
+
 // A Quill page: one tldraw canvas of ink plus Claude's (hand-corrected) transcription.
 // Its metadata lives in the page index; its ink and transcript live in their own files.
 
@@ -52,6 +54,10 @@ export interface PagesApi {
   loadTranscript(id: string): Promise<string>
   /** Save the transcript. With readAt it's an automatic read of the ink as of then; without, a hand edit. */
   saveTranscript(id: string, markdown: string, readAt?: string): Promise<void>
+  /** Claude's checks of the page's work, newest first. */
+  loadChecks(id: string): Promise<CheckResult[]>
+  /** Forget one check (its marks come off the page in the renderer). */
+  removeCheck(id: string, checkId: string): Promise<void>
   setPaper(id: string, paper: Paper): Promise<PageMeta>
   /** The page that was open when Quill last closed, if it still exists. */
   getLastOpened(): Promise<string | null>

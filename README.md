@@ -47,7 +47,19 @@ the page image to Claude, so it costs a little per pause. **File ▸ Paper** set
 graph paper per page (new pages take the last one chosen); the lines aren't part of what Claude
 reads. Pen strokes are thinner than tldraw's at every size (S is a fine tip). The **brush eraser**
 (first in the toolbar, Shift+E) rubs out only the ink under its circle, cutting a stroke in two
-where it passes through; tldraw's own eraser (E) still deletes whole strokes. New pages come from the
+where it passes through; tldraw's own eraser (E) still deletes whole strokes. **Check work** (the ✓ in a dashed box, first in the toolbar, or Shift+C) checks a problem you've
+worked: drag a box over the problem and your working, with your final answer boxed by hand.
+Claude solves it itself first (up to textbook calculus and differential equations, checking its
+own answer and counting equivalent forms as right), then marks your work in red pen (a dashed
+box round each mistake with a short note, a green tick by a correct answer) and puts each
+correction under its line in the transcript preview. **Feedback** in the top bar shows what it
+found: a verdict, what went right, the first mistake and why, and a correct solution. Stuck?
+Write **?** under a problem instead of working and check that: Claude walks you through it step
+by step and leaves a blue note by the ?. Each problem keeps its own check (checking the same area
+again replaces it, and **×** on a check removes it and its marks). Claude never reads the marks
+as your writing, and the transcript itself, and what's saved to Lifeline, stay as you wrote them.
+Checks are kept with the page (`pages/<id>.check.json`). The page scrolls with the bar on the canvas's
+left edge (drag it, or tap the track for a screen at a time). New pages come from the
 **+** on any project's row or **File ▸ New page**; **✎** renames a page and **×** deletes it (into
 Quill's trash folder). The **«** at the top of the sidebar hides it to a rail.
 

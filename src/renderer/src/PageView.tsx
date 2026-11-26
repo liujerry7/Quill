@@ -1,11 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Editor } from 'tldraw'
 import type { LifelineProject } from '../../shared/lifeline'
 import type { PageMeta, Paper } from '../../shared/pages'
 import { PageCanvas } from './PageCanvas'
 import { PageHeader } from './PageHeader'
 import { useStoredState } from './storedFlag'
+import { setCheckHandler } from './CheckTool'
+import { FeedbackPanel } from './FeedbackPanel'
 import { TranscriptPanel } from './TranscriptPanel'
+import { useCheckWork } from './useCheckWork'
 import { usePageTranscript } from './usePageTranscript'
 
 const pagesApi = window.quill.pages
@@ -44,6 +47,20 @@ export function PageView({ page, configured, projects, onMove, onSaved, onChange
   const [editor, setEditor] = useState<Editor | null>(null)
   const [transcript, setTranscript] = useStoredState<'open' | 'closed'>('quill.transcript', 'closed')
   const t = usePageTranscript(page, editor, onSaved)
+  // One side panel at a time: the feedback takes the transcript's place while it's open.
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
+  const c = useCheckWork(page.id, editor)
+  // The Check work tool hands its area here; corrections point at the transcript as it is then.
+  const textRef = useRef(t.text)
+  textRef.current = t.text
+  const checkArea = c.checkArea
+  useEffect(() => {
+    setCheckHandler((area) => {
+      setFeedbackOpen(true)
+      checkArea(area, textRef.current ?? '')
+    })
+    return () => setCheckHandler(null)
+  }, [checkArea])
   const paper = page.paper ?? 'plain'
 
   const choosePaper = async (p: Paper) => {
@@ -63,8 +80,14 @@ export function PageView({ page, configured, projects, onMove, onSaved, onChange
           auto={t.auto}
           read={t.read}
           save={t.save}
-          transcriptOpen={transcript === 'open'}
-          onToggleTranscript={() => setTranscript(transcript === 'open' ? 'closed' : 'open')}
+          transcriptOpen={!feedbackOpen && transcript === 'open'}
+          onToggleTranscript={() => {
+            setFeedbackOpen(false)
+            setTranscript(feedbackOpen || transcript !== 'open' ? 'open' : 'closed')
+          }}
+          feedbackOpen={feedbackOpen}
+          checking={c.state.kind === 'checking'}
+          onToggleFeedback={() => setFeedbackOpen(!feedbackOpen)}
           onReadNow={t.readNow}
           onSave={t.saveToLifeline}
           onDismissSave={t.dismissSave}
@@ -76,13 +99,16 @@ export function PageView({ page, configured, projects, onMove, onSaved, onChange
           <PageCanvas pageId={page.id} paper={paper} onEditor={setEditor} />
         </main>
       </div>
-      {transcript === 'open' && (
+      {feedbackOpen ? (
+        <FeedbackPanel checks={c.checks} state={c.state} onRemove={c.remove} onClose={() => setFeedbackOpen(false)} />
+      ) : transcript === 'open' && (
         <TranscriptPanel
           text={t.text}
           auto={t.auto}
           onEdit={t.edit}
           onReadNow={t.readNow}
           onClose={() => setTranscript('closed')}
+          corrections={c.checks.flatMap((check) => check.marks)}
         />
       )}
     </div>

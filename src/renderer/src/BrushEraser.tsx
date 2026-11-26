@@ -17,6 +17,7 @@ import {
   Vec,
   type VecModel,
 } from 'tldraw'
+import { CHECK_TOOL } from './CheckTool'
 
 // A brush eraser: it rubs out only the ink under it, cutting a stroke in two where it passes
 // through the middle. tldraw's own eraser (still there) deletes whole strokes.
@@ -196,13 +197,15 @@ export const BRUSH_ERASER_OVERRIDES: TLUiOverrides = {
   translations: { en: { 'tool.brush-eraser': 'Brush eraser' } },
 }
 
-/** tldraw's toolbar with the brush eraser first. */
+/** tldraw's toolbar with Quill's tools first: Check work, then the brush eraser. */
 export function QuillToolbar() {
   const tools = useTools()
-  const selected = useIsToolSelected(tools[BRUSH_ERASER])
+  const checking = useIsToolSelected(tools[CHECK_TOOL])
+  const erasing = useIsToolSelected(tools[BRUSH_ERASER])
   return (
     <DefaultToolbar>
-      <TldrawUiMenuItem {...tools[BRUSH_ERASER]} isSelected={selected} />
+      <TldrawUiMenuItem {...tools[CHECK_TOOL]} isSelected={checking} />
+      <TldrawUiMenuItem {...tools[BRUSH_ERASER]} isSelected={erasing} />
       <DefaultToolbarContent />
     </DefaultToolbar>
   )

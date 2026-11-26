@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { Editor } from 'tldraw'
+import { Box, type Editor } from 'tldraw'
 import type { TodoResult } from '../../shared/lifeline'
 import type { PageMeta } from '../../shared/pages'
+import { isMark, onlyMarks } from './checkMarks'
 
 const pagesApi = window.quill.pages
 const SAVE_DELAY_MS = 400
@@ -116,8 +117,7 @@ export function usePageTranscript(page: PageMeta, editor: Editor | null, onSaved
       }
       if (readTimer.current) clearTimeout(readTimer.current)
       const startedAt = new Date().toISOString()
-      const shapes = [...editor.getCurrentPageShapeIds()]
-      if (shapes.length === 0) {
+      if (inkIds(editor).length === 0) {
         // Everything erased: the transcript empties too (unless it's hand-written).
         if (textRef.current !== '') await apply('', startedAt)
         setRead({ kind: 'idle' })
@@ -127,8 +127,9 @@ export function usePageTranscript(page: PageMeta, editor: Editor | null, onSaved
       inFlight.current = true
       setRead({ kind: 'reading' })
       try {
-        const { blob } = await editor.toImage(shapes, { format: 'png', background: true, darkMode: false, padding: 24 })
-        const result = await window.quill.ink.read(await toBase64(blob))
+        const image = await pageImage(editor)
+        if (!image) return
+        const result = await window.quill.ink.read(image.png)
         if (!alive.current) return
         if (!result.ok) {
           setRead({ kind: 'error', message: result.error })
@@ -164,7 +165,14 @@ export function usePageTranscript(page: PageMeta, editor: Editor | null, onSaved
   // Every change to the ink restarts the wait.
   useEffect(() => {
     if (!editor) return
-    return editor.store.listen(schedule, { scope: 'document', source: 'user' })
+    return editor.store.listen(
+      ({ changes }) => {
+        // A check's marks going on or off the page isn't new writing.
+        const records = [...Object.values(changes.added), ...Object.values(changes.updated).map(([, to]) => to), ...Object.values(changes.removed)]
+        if (!onlyMarks(records)) schedule()
+      },
+      { scope: 'document', source: 'user' },
+    )
   }, [editor, schedule])
 
   // Ink drawn since the last read (say Quill closed mid-pause) is read once the page is up.
@@ -202,6 +210,41 @@ export function usePageTranscript(page: PageMeta, editor: Editor | null, onSaved
     saveToLifeline,
     dismissSave: () => setSave({ kind: 'idle' }),
   }
+}
+
+const PADDING = 24
+/**
+ * The image's longest side, at most. The API scales down bigger images, and a check's marks use
+ * pixel positions in the image as sent, so Quill sends it at a size that's kept as is.
+ */
+const MAX_IMAGE_PX = 1500
+
+/** The page's ink: everything but a check's marks. */
+const inkIds = (editor: Editor) => editor.getCurrentPageShapes().filter((s) => !isMark(s)).map((s) => s.id)
+
+/**
+ * The page's ink as a PNG (base64), as Claude sees it, the page area it shows and its size in
+ * pixels; null if there's no ink there. With `area`, just the ink in that area, cropped to it.
+ */
+export async function pageImage(
+  editor: Editor,
+  area?: Box,
+): Promise<{ png: string; region: Box; size: { width: number; height: number } } | null> {
+  const ids = inkIds(editor).filter((id) => {
+    const b = editor.getShapePageBounds(id)
+    return !area || (!!b && area.collides(b))
+  })
+  if (ids.length === 0) return null
+  const region = area ?? Box.Common(ids.flatMap((id) => editor.getShapePageBounds(id) ?? [])).expandBy(PADDING)
+  const pixelRatio = Math.min(2, MAX_IMAGE_PX / Math.max(region.w, region.h, 1))
+  const { blob, width, height } = await editor.toImage(ids, {
+    format: 'png',
+    background: true,
+    darkMode: false,
+    ...(area ? { bounds: area, padding: 0 } : { padding: PADDING }),
+    pixelRatio,
+  })
+  return { png: await toBase64(blob), region, size: { width, height } }
 }
 
 function toBase64(blob: Blob): Promise<string> {
